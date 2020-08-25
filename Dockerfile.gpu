@@ -1,0 +1,196 @@
+FROM tensorflow/tensorflow:1.15.2-gpu-py3
+MAINTAINER "Vivian Miranda"
+
+############################################################################
+# GLOBAL
+
+ENV MAKE_NUM_THREADS=4
+
+
+RUN add-apt-repository ppa:ubuntu-toolchain-r/test \
+    && apt-get update \
+    && apt-get install -y wget git curl vim nano \
+        libfreetype6-dev libpng12-dev libhdf5-dev make gfortran-9 g++-9 gcc-9 \
+        cmake libboost-all-dev libopenblas-dev liblapack-dev libarpack2-dev
+        xz-utils build-essential python3.7
+
+# Register the GCC/PYTHON versions in alternatives
+RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 9 \
+    && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 9 \
+    && update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-9 9 \
+    && update-alternatives --install /usr/bin/python python /usr/bin/python3.7 1
+
+# Set gcc-9/python3 as the default compiler/python
+RUN update-alternatives --set gcc /usr/bin/gcc-9
+RUN update-alternatives --set g++ /usr/bin/gcc-9
+RUN update-alternatives --set gfortran /usr/bin/gfortran-9
+RUN update-alternatives --set python /usr/bin/python3.7
+
+# Upgrade pip to latest version
+RUN curl -s https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+  && python get-pip.py --force-reinstall \
+  && rm get-pip.py
+
+# Avoid Cache: towardsdatascience.com/docker-best-practices-for-data-scientists-2ed7f6876dff
+rm -rf /var/lib/apt/lists/*
+
+############################################################################
+# Jupyter and Tensorboard ports
+EXPOSE 8888 6006
+
+############################################################################
+# ADD NON-ROOT USER WITH SUDO PRIVILEGES
+
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -g $GID vm-group
+RUN useradd -N -l -u $UID -g vm-group -G sudo vivianmiranda
+
+############################################################################
+# VOLUMES
+
+VOLUME /data
+VOLUME /model
+VOLUME /aux
+
+RUN ["mkdir", "data"]
+RUN ["mkdir", "model"]
+RUN ["mkdir", "aux"]
+
+############################################################################
+# INSTALL PYTHON PACKAGES
+
+RUN pip3 --no-cache-dir install --upgrade pip==20.2.2 --use-feature=2020-resolver
+RUN pip3 --no-cache-dir install --use-feature=2020-resolver wheel==0.34.2  \
+  && setuptools==47.3.1  \
+  && virtualenv==20.0.21  \
+  && Cython==0.29.20  \
+  && scipy==1.4.1 --no-deps  \
+  && pandas==1.0.5  \
+  && numpy==1.17.2  \
+  && mpi4py==3.0.3  \
+  && pyyaml==5.3.1  \
+  && urllib3==1.21.1  \
+  && fuzzywuzzy==0.18.0  \
+  && h5py==2.10.0  \
+  && imageio==2.8.0  \
+  && imutils==0.5.3  \
+  && iminuit==1.4.5  \
+  && jupyter==1.0.0  \
+  && kaggle==1.5.6  \
+  && kaggle-cli==0.12.13  \
+  && keras=2.4.3  \
+  && mpmath==1.1.0  \
+  && matplotlib==3.2.2  \
+  && astropy==4.0.1.post1  \
+  && emcee==3.0.2  \
+  && GetDist==1.1.2  \
+  && GDAL==3.0.4  \
+  && geopandas==0.8.1  \
+  && kiwisolver==1.2.0  \
+  && Py-BOBYQA==1.2  \
+  && pybind11==2.5.0  \
+  && pyfits  \
+  && pyparsing==2.4.7  \
+  && pillow==7.1.2  \
+  && -U sklearn  \
+  && tokenizers==0.8.0  \
+  && "descarteslabs[complete]"  \
+  && opencv-python-headless  \
+  && llvmlite==0.33.0  \
+  && numba==0.50.1  \
+  && pyproj  \
+  && shapely  \
+  && rasterio \
+  && torch==1.6.0 \
+  && torchvision
+
+############################################################################
+# INSTALL RTREE (FOR SPACENET UTILITIES)
+
+ENV RTREE_TAR="spatialindex-src-1.9.2.tar.gz"
+ENV RTREE_DL="https://github.com/libspatialindex/libspatialindex/releases/download/1.9.2/$RTREE_TAR"
+
+RUN wget -q $RTREE_DL \
+    && tar zxvf $RTREE_TAR \
+    && cd spatialindex-src-1.9.2 \
+    && cmake . \
+    && make -j MAKE_NUM_THREADS \
+    && make install \
+    && pip3 --no-cache-dir install rtree  \
+    && cd ../ \
+    && rm -rf spatialindex-src-1.9.2/
+
+############################################################################
+# INSTALL JUPYTER NOTEBOOK
+
+COPY jupyter_notebook_config.py /root/.jupyter/
+COPY run_jupyter.sh /
+
+############################################################################
+# INSTALL GSL
+
+ENV GSL_TAR="gsl-2.6.tar.gz"
+ENV GSL_DL="http://ftp.wayne.edu/gnu/gsl/$GSL_TAR"
+
+RUN wget -q $GSL_DL \
+    && tar zxvf $GSL_TAR \
+    && rm -f $GSL_TAR \
+    && cd gsl-2.6 \
+    && ./configure --enable-shared=yes --enable-static=yes \
+    && make -j MAKE_NUM_THREADS \
+    && make install \
+    && cd ../ \
+    && rm -rf gsl-2.6/
+
+############################################################################
+# INSTALL FFTW3
+
+ENV FFTW_TAR="fftw-3.3.8.tar.gz"
+ENV FFTW_DL="http://www.fftw.org/$FFTW_TAR"
+
+RUN wget -q $FFTW_DL \
+    && tar zxvf $FFTW_TAR \
+    && rm -f $FFTW_TAR \
+    && cd fftw-3.3.8/ \
+    && ./configure --enable-openmp --enable-shared=yes --enable-static=yes \
+    && make -j $MAKE_NUM_THREADS \
+    && make install \
+    && cd ../ \
+    && rm -rf fftw-3.3.8/
+
+############################################################################
+# INSTALL CFITSIO
+
+ENV CFITSIO_TAR="cfitsio-3.49.tar.gz"
+ENV CFITSIO_DL="http://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/$CFITSIO_TAR"
+
+RUN wget -q $CFITSIO_DL \
+    && tar zxvf $CFITSIO_TAR \
+    && rm -f $CFITSIO_TAR \
+    && cd cfitsio-3.49/ \
+    && cmake -DBUILD_SHARED_LIBS=TRUE --log-level=ERROR . \
+    && make -j $MAKE_NUM_THREADS \
+    && make install \
+    && cd ../ \
+    && rm -rf cfitsio-3.49/
+
+############################################################################
+# INSTALL ARMADILLO CPP LIB
+
+ENV ARMA_TAR="armadillo-9.200.7.tar.xz"
+ENV ARMA_DL="https://sourceforge.net/projects/arma/files/$ARMA_TAR"
+
+RUN wget -q $ARMA_DL \
+    && tar xvf $ARMA_TAR \
+    && rm -f $ARMA_TAR \
+    && cd armadillo-9.200.7/ \
+    && cmake -DBUILD_SHARED_LIBS=TRUE --log-level=ERROR . \
+    && make -j $MAKE_NUM_THREADS \
+    && make install \
+    && cd ../ \
+    && rm -rf armadillo-9.200.7/
+
+############################################################################
+
+
