@@ -1,0 +1,318 @@
+FROM whovianbase
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# SET CONDA ENV EARTH-TF2
+
+ENV TIFF_CFLAGS="-I/opt/conda/envs/earth-tf2/include" \
+   TIFF_LIBS="-L/opt/conda/envs/earth-tf2/lib -ltiff" \
+   PROJ_LIB=/opt/conda/envs/earth-tf2/share/proj \
+   GDAL_DATA=/opt/conda/envs/earth-tf2/share/gdal \
+   GDAL_CONFIG=/opt/conda/envs/earth-tf2/bin/gdal-config \
+   OLDPATH=$PATH \
+   PATH=/opt/conda/envs/earth-tf2/bin:$PATH \
+   OLD_LD_LIB_PATH=$LD_LIBRARY_PATH \
+   LD_LIBRARY_PATH=/opt/conda/envs/earth-tf2/libs:$LD_LIBRARY_PATH
+
+RUN conda create --name earth-tf2 python=3.7 -c conda-forge/label/cf202003 \
+  --no-default-packages --strict-channel-priority --override-channels \
+  --quiet --yes \
+  && conda install -n earth-tf2 --quiet --yes \
+    freeimage \
+    libtiff \
+    'conda-forge/label/cf202003::boost=1.70.0' \
+    'python-dateutil=2.8.1' \
+    'readline=8.0' \
+    'six=1.15.0' \
+    'numpy=1.19.1' \
+    'cython=0.29.21' \
+    'tini=0.18.0' \
+    'protobuf=3.13.0' \
+    'nodejs' \
+    'libpng=1.6.37' \
+    'kiwisolver=1.2.0' \
+    'pyparsing=2.4.7' \
+    'pillow=7.2.0' \
+    'conda-forge/label/cf201901::fuzzywuzzy' \
+    'pyyaml=5.3.1' \
+    'virtualenv=16.7.5' \
+    'imageio=2.9.0' \
+    'widgetsnbextension=3.5.1' \
+    'notebook=6.1.1' \
+#--------------------------------------------------------------------
+# NUMERICAL WORK
+    'numba=0.48.0' \
+    'scipy=1.4.1' \
+    'pandas=1.1.1' \
+    'hdf5=1.10.6' \
+    'h5py=2.10.0' \
+#--------------------------------------------------------------------
+# MachineLearning
+    cudatoolkit \
+    'scikit-image=0.16.2' \
+    'scikit-learn=0.23.2' \
+    'tensorflow-gpu=2.2.0' \
+    'keras=2.4.3'  \
+    'keras-preprocessing=1.1.0' \
+#--------------------------------------------------------------------
+  && /opt/conda/envs/earth-tf2/bin/pip install --quiet --no-cache-dir \
+    imutils  \
+    pyfits \
+    seaborn  \
+    emcee  \
+    iminuit \
+    matplotlib \
+#--------------------------------------------------------------------
+# Jupyter Lab
+    jupyterhub \
+    jupyterlab \
+#--------------------------------------------------------------------
+  && conda clean --all -f -y \
+  && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR
+
+RUN conda install -n earth-tf2 --quiet --yes \
+  pyarrow \
+  conda-forge/label/cf201901::geojson \
+  gmp \
+  mpfr \
+  xerces-c \
+  conda-forge/label/cf201901::muparser \
+  && wget https://download.osgeo.org/proj/proj-7.1.0.tar.gz \
+  && tar -xzf proj-7.1.0.tar.gz \
+  && rm -f proj-7.1.0.tar.gz \
+  && cd ./proj-7.1.0 \
+  && ./configure --prefix=/opt/conda/envs/earth-tf2/ \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../ \
+  && rm -rf proj-7.1.0/ \
+#--------------------------------------------------------------------
+  && git clone git://github.com/libgeos/geos.git \
+  && cd ./geos \
+  && git checkout 3.7.2 \
+  && ./autogen.sh \
+  && mkdir obj \
+  && cd obj \
+  && ../configure --prefix=/opt/conda/envs/earth-tf2/ \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../../ \
+  && rm -rf geos/ \
+#--------------------------------------------------------------------
+  && wget http://download.osgeo.org/gdal/3.1.2/gdal-3.1.2.tar.gz \
+  && tar -xvzf gdal-3.1.2.tar.gz \
+  && rm -f gdal-3.1.2.tar.gz \
+  && cd gdal-3.1.2 \
+  && ./configure --prefix=/opt/conda/envs/earth-tf2/ --quiet \
+    --with-local=/opt/conda/envs/earth-tf2/ \
+    --with-cfitsio=/usr/local \
+    --with-hdf5=/opt/conda/envs/earth-tf2/ \
+    --with-xerces-inc=/opt/conda/envs/earth-tf2/include \
+    --with-xerces-lib=/opt/conda/envs/earth-tf2/lib \
+    --with-armadillo=/usr/local \
+    --with-geos=/opt/conda/envs/earth-tf2/ \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../ \
+  && rm -rf gdal-3.1.2/
+
+#--------------------------------------------------------------------
+RUN git clone git://github.com/opencv/opencv.git /opencv \
+  && git clone git://github.com/opencv/opencv_contrib.git \
+  && cd /opencv \
+  && git checkout 4.4.0 \
+  && mkdir ./build \
+  && cd ./build \
+  && cmake -DCMAKE_INSTALL_PREFIX=/opt/conda/envs/earth-tf2/ \
+     -DCMAKE_BUILD_TYPE=RELEASE \
+     -DOPENCV_EXTRA_MODULES_PATH=/opencv_contrib/modules \
+     -DPYTHON_EXECUTABLE=/opt/conda/envs/earth-tf2/bin/python \
+     -DOPENCV_ENABLE_NONFREE=ON \
+     -DBUILD_PROTOBUF=ON \
+     -DBUILD_TIFF=ON \
+     -DWITH_CUDA=ON \
+     -DFORCE_VTK=ON \
+     -DWITH_EIGEN=ON \
+     -DWITH_FFMPEG=ON \
+     -DWITH_GTK=OFF \
+     -DWITH_JPEG=ON \
+     -DWITH_PNG=ON \
+     -DWITH_TBB=ON \
+     -DWITH_CUDNN=ON \
+     -DWITH_GDAL=ON \
+     -DBUILD_EXAMPLES=ON \
+     -D INSTALL_C_EXAMPLES=ON \
+     -D INSTALL_PYTHON_EXAMPLES=ON \
+     -DENABLE_FAST_MATH=ON \
+     -DCUDA_FAST_MATH=ON \
+     -DCMAKE_C_COMPILER=gcc-7 \
+     -DCMAKE_CXX_COMPILER=g++-7 .. \
+  && cd /opencv/build \
+  && make VERBOSE=1 \
+  && make -j $MAKE_NUM_THREADS install \
+  && cd ../ \
+  && rm -rf /opencv \
+  && rm -rf /opencv_contrib \
+  && ldconfig
+
+RUN /opt/conda/envs/earth-tf2/bin/pip install --quiet --no-cache-dir \
+   --no-binary :all: opencv-python \
+#--------------------------------------------------------------------
+  && wget https://github.com/libspatialindex/libspatialindex/releases/download/1.9.3/spatialindex-src-1.9.3.tar.gz \
+  && tar zxvf spatialindex-src-1.9.3.tar.gz \
+  && rm -f spatialindex-src-1.9.3.tar.gz \
+  && cd ./spatialindex-src-1.9.3 \
+  && cmake . -DCMAKE_INSTALL_PREFIX=/opt/conda/envs/earth-tf2/ \
+  && make -j $MAKE_NUM_THREADS  \
+  && make install \
+  && cd ../ \
+  && rm -rf ./spatialindex-src-1.9.3
+#--------------------------------------------------------------------
+RUN git clone git://github.com/ubarsc/kealib.git \
+  && cd ./kealib \
+  && git checkout kealib-1.4.13 \
+  && cmake . \
+    -DCMAKE_INSTALL_PREFIX=/opt/conda/envs/earth-tf2/ \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../ \
+  && rm -rf ./kealib \
+#--------------------------------------------------------------------
+  && ldconfig \
+#--------------------------------------------------------------------
+  && git clone git://github.com/pyproj4/pyproj.git \
+  && cd ./pyproj \
+  && git checkout v2.6.1rel \
+  && PROJ_DIR=/opt/conda/envs/earth-tf2/ \
+    /opt/conda/envs/earth-tf2/bin/python setup.py install \
+  && cd ../ \
+  && rm -rf pyproj \
+#--------------------------------------------------------------------
+  && git clone git://github.com/Toblerity/Fiona.git \
+  && cd Fiona \
+  && git checkout 1.8.13.post1 \
+  && /opt/conda/envs/earth-tf2/bin/python setup.py build_ext \
+    -I/opt/conda/envs/earth-tf2/include \
+    -L/opt/conda/envs/earth-tf2/lib -lgdal \
+  && /opt/conda/envs/earth-tf2/bin/python setup.py install \
+  && cd ../ \
+  && rm -rf ./Fiona \
+#--------------------------------------------------------------------
+  && GEOS_CONFIG=/opt/conda/envs/earth-tf2/ \
+    /opt/conda/envs/earth-tf2/bin/pip install \
+    --quiet --no-cache-dir --no-binary :all: \
+    dask \
+    shapely \
+    geopandas \
+    rasterio \
+  && /opt/conda/envs/earth-tf2/bin/pip install --quiet --no-cache-dir descartes \
+#--------------------------------------------------------------------
+  && /opt/conda/envs/earth-tf2/bin/pip install --global-option=build_ext \
+    --global-option=build_ext --prefix=/opt/conda/envs/earth-tf2 \
+    --global-option="-L /opt/conda/envs/earth-tf2/libs -I/opt/conda/envs/earth-tf2/include" \
+    pygdal=="3.1.2.6" --no-binary :all: --quiet --no-cache-dir \
+#--------------------------------------------------------------------
+  && git clone git://github.com/remotesensinginfo/arcsi.git \
+  && cd ./arcsi \
+  && git checkout v3.8.1 \
+  && /opt/conda/envs/earth-tf2/bin/python setup.py install \
+  && cd ../ \
+  && rm -rf arcsi \
+#--------------------------------------------------------------------
+  && git clone git://github.com/perrygeo/python-rasterstats.git \
+  && cd python-rasterstats \
+  && git checkout 0.15.0  \
+  && /opt/conda/envs/earth-tf2/bin/python setup.py install \
+  && cd ../ \
+  && rm -rf python-rasterstats \
+#--------------------------------------------------------------------
+  && git clone git://github.com/GeospatialPython/pyshp.git \
+  && cd pyshp \
+  && git checkout 2.1.0   \
+  && /opt/conda/envs/earth-tf2/bin/python setup.py install \
+  && cd ../ \
+  && rm -rf pyshp \
+#--------------------------------------------------------------------
+  && git clone git://github.com/scisco/area.git \
+  && cd area \
+  && git checkout v1.1.1    \
+  && /opt/conda/envs/earth-tf2/bin/python setup.py install \
+  && cd ../ \
+  && rm -rf area \
+#--------------------------------------------------------------------
+  && conda install -n earth-tf2 --quiet --yes \
+    conda-forge/label/cf202003::cgal=4.14 \
+#--------------------------------------------------------------------
+  && git clone git://github.com/remotesensinginfo/rsgislib.git \
+  && cd rsgislib \
+  && cmake . -DGDAL_INCLUDE_DIR=/opt/conda/envs/earth-tf2/include \
+    -DGDAL_LIB_PATH=/opt/conda/envs/earth-tf2/lib \
+    -DGEOS_INCLUDE_DIR=/opt/conda/envs/earth-tf2/include \
+    -DGEOS_LIB_PATH=/opt/conda/envs/earth-tf2/lib \
+    -DCGAL_INCLUDE_DIR=/opt/conda/envs/earth-tf2/include \
+    -DCGAL_LIB_PATH=/opt/conda/envs/earth-tf2/lib \
+    -DHDF5_INCLUDE_DIR=/opt/conda/envs/earth-tf2/include \
+    -DHDF5_LIB_PATH=/opt/conda/envs/earth-tf2/lib \
+    -DKEA_INCLUDE_DIR=/opt/conda/envs/earth-tf2/include \
+    -DKEA_LIB_PATH=/opt/conda/envs/earth-tf2/lib \
+    -DBOOST_INCLUDE_DIR=/opt/conda/envs/earth-tf2/include \
+    -DBOOST_LIB_PATH=/opt/conda/envs/earth-tf2/lib \
+    -DMPFR_INCLUDE_DIR=/opt/conda/envs/earth-tf2/include \
+    -DMPFR_LIB_PATH=/opt/conda/envs/earth-tf2/lib \
+    -DXERCESC_INCLUDE_DIR=/opt/conda/envs/earth-tf2/include \
+    -DXERCESC_LIB_PATH=/opt/conda/envs/earth-tf2/lib \
+    -DMUPARSER_INCLUDE_DIR=/opt/conda/envs/earth-tf2/include \
+    -DMUPARSER_LIB_PATH=/opt/conda/envs/earth-tf2/lib \
+    -DCMAKE_INSTALL_PREFIX=/opt/conda/envs/earth-tf2/ \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../ \
+  && rm -rf ./rsgislib \
+#--------------------------------------------------------------------
+  && git clone git://github.com/descarteslabs/descarteslabs-python.git \
+  && cd descarteslabs-python \
+  && git checkout v1.4.0 \
+  && /opt/conda/envs/earth-tf2/bin/python setup.py install \
+  && cd ../ \
+  && rm -rf descarteslabs-python \
+#--------------------------------------------------------------------
+  && conda clean --all -f -y \
+  && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR
+
+ENV PATH=$OLDPATH \
+  LD_LIBRARY_PATH=$OLD_LD_LIB_PATH
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+
+COPY jupyter_notebook_config.py $HOME/.jupyter/jupyter_notebook_config.py
+COPY bashrc $HOME/bash.bashrc
+
+RUN chmod +x /usr/bin/tini \
+  && chmod a+rwx $HOME/bash.bashrc \
+  && mkdir -p $HOME/host/ && chmod -R a+rwx $HOME/host/ \
+  && /usr/local/bin/fix-permissions $HOME \
+  && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
+  && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
+  && rm -rf ~/.cache/pip \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR \
+  && chown $NB_USER:$NB_GID $CONDA_DIR
+
+EXPOSE 8888 6006
+# Configure container startup
+ENTRYPOINT ["tini", "-g", "--"]
+CMD ["/bin/bash", "-c", "source $HOME/bash.bashrc; /bin/bash"]
+
+USER $NB_UID
+WORKDIR $HOME
+VOLUME ["$HOME/host/"]
+
+RUN /usr/local/bin/fix-permissions $CONDA_DIR \
+  && /usr/local/bin/fix-permissions $HOME

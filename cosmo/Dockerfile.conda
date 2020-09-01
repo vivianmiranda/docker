@@ -1,0 +1,265 @@
+FROM ubuntu:18.04
+
+ARG NB_USER="whovian"
+ARG NB_UID=1000
+ARG NB_GID=1000
+
+# Fix DL4006
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update \
+  && apt-get install -yq --fix-missing --no-install-recommends \
+    software-properties-common  gfortran-7 g++-7 gcc-7 \
+  && add-apt-repository ppa:ubuntu-toolchain-r/test \
+  && apt-get update \
+  && apt-get install -yq --fix-missing --no-install-recommends \
+    libhdf5-dev liblapack-dev libopenblas-dev libarpack2-dev \
+    libgtk2.0-dev libglib2.0-0 libfreetype6-dev pkg-config \
+    make wget git curl xz-utils nano gfortran-9 g++-9 gcc-9 \
+    python3.7 xz-utils tzdata unzip pkg-config libsqlite3-dev sqlite3  \
+    build-essential sudo locales git-lfs fonts-dejavu  fonts-liberation \
+    texlive-xetex texlive-fonts-recommended texlive-plain-generic \
+    libtool automake zlib1g-dev libcurl4-gnutls-dev ca-certificates libssl-dev \
+    libtiff5-dev libpng-dev run-one ffmpeg libprotobuf-dev protobuf-compiler \
+    libjpeg-dev libtbb-dev dvipng libopenexr-dev libavcodec-dev libeigen3-dev \
+    libjpeg8-dev libavformat-dev libswscale-dev libv4l-dev gfortran-7 g++-7 gcc-7 \
+    "openjdk-11-jre-headless" ca-certificates-java openmpi-bin openmpi-common \
+    grep sed dpkg \
+# ------------------------------------------------------------------------
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* \
+  && ln -s /bin/tar /bin/gtar \
+  && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
+  && locale-gen \
+# ------------------------------------------------------------------------
+  && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 9 \
+  && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 9 \
+  && update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-9 9 \
+  && update-alternatives --install /usr/bin/python python /usr/bin/python3.7 1 \
+  && update-alternatives --set gcc /usr/bin/gcc-9 \
+  && update-alternatives --set g++ /usr/bin/g++-9 \
+  && update-alternatives --set gfortran /usr/bin/gfortran-9 \
+  && update-alternatives --set python /usr/bin/python3.7 \
+# ------------------------------------------------------------------------
+  && TINI_VERSION=`curl https://github.com/krallin/tini/releases/latest | grep -o "/v.*\"" | sed 's:^..\(.*\).$:\1:'` \
+  && curl -L "https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini_${TINI_VERSION}.deb" > tini.deb \
+  && dpkg -i tini.deb \
+  && rm tini.deb \
+  && apt-get clean
+
+ENV CONDA_DIR=/opt/conda \
+    SHELL=/bin/bash \
+    NB_USER=$NB_USER \
+    NB_UID=$NB_UID \
+    NB_GID=$NB_GID \
+    LC_ALL=en_US.UTF-8 \
+    LANG=en_US.UTF-8 \
+    LANGUAGE=en_US.UTF-8 \
+    HOME=/home/$NB_USER \
+    CONDAV=4.8.3 \
+    MAKE_NUM_THREADS=5
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Copy a script that we will use to correct permissions
+# after running certain commands
+
+COPY fix-permissions /usr/local/bin/fix-permissions
+RUN chmod a+rx /usr/local/bin/fix-permissions
+
+# https://github.com/jupyter/docker-stacks/pull/826
+# Enable prompt color in the skeleton .bashrc before creating the NB_USER
+RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc
+
+# Create NB_USER wtih name jovyan user with UID=1000 and in the 'users' group
+# and make sure these dirs are writable by the `users` group.
+RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su \
+    && sed -i.bak -e 's/^%admin/#%admin/' /etc/sudoers \
+    && sed -i.bak -e 's/^%sudo/#%sudo/' /etc/sudoers \
+    && useradd -m -s /bin/bash -N -u $NB_UID $NB_USER \
+    && mkdir -p $CONDA_DIR \
+    && chown $NB_USER:$NB_GID $CONDA_DIR \
+    && chmod g+w /etc/passwd \
+    && /usr/local/bin/fix-permissions $HOME \
+    && /usr/local/bin/fix-permissions $CONDA_DIR
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# INSTALL CORE RESEARCH LIBRARIES FROM SOURCE
+
+RUN git clone git://github.com/Kitware/CMake.git \
+  && cd ./CMake \
+  && git checkout v3.16.0 \
+  && ./bootstrap \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../ \
+  && rm -rf CMake \
+#--------------------------------------------------------------------
+  && curl -OL "https://github.com/google/protobuf/releases/download/v3.0.0/protoc-3.0.0-linux-x86_64.zip" \
+  && unzip protoc-3.0.0-linux-x86_64.zip -d proto3 \
+  && mv proto3/bin/* /usr/local/bin \
+  && mv proto3/include/* /usr/local/include \
+  && rm -rf proto3 protoc-3.0.0-linux-x86_64.zip \
+#--------------------------------------------------------------------
+  && wget -q http://ftp.wayne.edu/gnu/gsl/gsl-2.6.tar.gz \
+  && tar zxvf gsl-2.6.tar.gz \
+  && rm -f gsl-2.6.tar.gz \
+  && cd gsl-2.6 \
+  && ./configure --enable-shared=yes --enable-static=yes \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../ \
+  && rm -rf gsl-2.6/ \
+#--------------------------------------------------------------------
+  && wget -q http://www.fftw.org/fftw-3.3.8.tar.gz \
+  && tar zxvf fftw-3.3.8.tar.gz \
+  && rm -f fftw-3.3.8.tar.gz \
+  && cd fftw-3.3.8/ \
+  && ./configure --enable-openmp --enable-shared=yes --enable-static=yes \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../ \
+  && rm -rf fftw-3.3.8/ \
+#--------------------------------------------------------------------
+  && wget -q http://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio-3.49.tar.gz \
+  && tar zxvf cfitsio-3.49.tar.gz \
+  && rm -f cfitsio-3.49.tar.gz \
+  && cd cfitsio-3.49/ \
+  && cmake -DBUILD_SHARED_LIBS=TRUE --log-level=ERROR . \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../ \
+  && rm -rf cfitsio-3.49/ \
+#--------------------------------------------------------------------
+  && wget -q https://sourceforge.net/projects/arma/files/armadillo-9.200.7.tar.xz \
+  && tar xvf armadillo-9.200.7.tar.xz \
+  && rm -f armadillo-9.200.7.tar.xz \
+  && cd armadillo-9.200.7/ \
+  && cmake -DBUILD_SHARED_LIBS=TRUE --log-level=ERROR . \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../ \
+  && rm -rf armadillo-9.200.7/ \
+#--------------------------------------------------------------------
+  && git clone git://github.com/RUrlus/carma.git \
+  && cd ./carma \
+  && cp -r ./include/carma/ /usr/local/carma \
+  && cd ../ \
+  && rm -rf carma/ \
+#--------------------------------------------------------------------
+  && git clone git://github.com/gabime/spdlog.git \
+  && cd ./spdlog \
+  && git checkout v1.7.0  \
+  && cmake --log-level=ERROR . \
+  && make -j $MAKE_NUM_THREADS all -Wno-dev \
+  && make install \
+  && cd ../ \
+  && rm -rf ./spdlog \
+#--------------------------------------------------------------------
+  && ldconfig
+
+#--------------------------------------------------------------------
+# INSTALL CONDA
+
+RUN wget --quiet \
+https://repo.continuum.io/miniconda/Miniconda3-py37_${CONDAV}-Linux-x86_64.sh \
+  && /bin/bash Miniconda3-py37_${CONDAV}-Linux-x86_64.sh -f -b -p $CONDA_DIR \
+  && rm Miniconda3-py37_${CONDAV}-Linux-x86_64.sh \
+  && $CONDA_DIR/bin/conda config --system --set auto_update_conda false \
+  && $CONDA_DIR/bin/conda config --system --set show_channel_urls true \
+  && $CONDA_DIR/bin/conda config --system --set auto_activate_base false \
+  && $CONDA_DIR/bin/conda clean --all -f -y \
+  && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR
+
+ENV PATH=$CONDA_DIR/bin:$PATH
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# SET CONDA ENV COSMO
+
+RUN conda create --force --name cosmo python=3.7 -c conda-forge/label/cf201901 \
+ --no-default-packages --strict-channel-priority --override-channels \
+ --quiet --yes \
+  && conda install -n cosmo --quiet --yes \
+    'boost=1.69' \
+    'python-dateutil=2.8.1' \
+    'readline=8.0' \
+    'six=1.15.0' \
+    'numpy=1.19.1' \
+    'cython=0.29.21' \
+    'tini=0.18.0' \
+    'protobuf=3.13.0' \
+    'nodejs' \
+    'libpng=1.6.37' \
+    'kiwisolver=1.2.0' \
+    'pyparsing=2.4.7' \
+    'pillow=7.2.0' \
+    'conda-forge/label/cf201901::fuzzywuzzy' \
+    'pyyaml=5.3.1' \
+    'virtualenv=16.0.0' \
+    'imageio=2.9.0' \
+    'widgetsnbextension=3.5.1' \
+    'notebook=6.1.1' \
+#--------------------------------------------------------------------
+# NUMERICAL WORK
+    'numba=0.41.0' \
+    'scipy=1.5.2' \
+    'pandas=1.1.1' \
+    'mpi4py=3.0.3' \
+    'hdf5=1.10.6' \
+    'h5py=2.10.0' \
+    'astropy=4.0.1.post1' \
+    'pybind11=2.5.0' \
+#--------------------------------------------------------------------
+  && /opt/conda/envs/cosmo/bin/pip install --quiet --no-cache-dir \
+    'GetDist==1.1.2' \
+    'pyfits' \
+    'seaborn' \
+    'emcee' \
+    'iminuit' \
+    'matplotlib' \
+#--------------------------------------------------------------------
+# Jupyter Lab
+    'jupyterhub' \
+    'jupyterlab' \
+#--------------------------------------------------------------------
+  && conda clean --all -f -y \
+  && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+COPY jupyter_notebook_config.py $HOME/.jupyter/jupyter_notebook_config.py
+COPY bashrc $HOME/bash.bashrc
+
+RUN chmod +x /usr/bin/tini \
+  && chmod a+rwx $HOME/bash.bashrc \
+  && mkdir -p $HOME/host/ && chmod -R a+rwx $HOME/host/ \
+  && /usr/local/bin/fix-permissions $HOME \
+  && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
+  && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
+  && rm -rf ~/.cache/pip \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR \
+  && chown $NB_USER:$NB_GID $CONDA_DIR
+
+EXPOSE 8888 6006
+# Configure container startup
+ENTRYPOINT ["tini", "-g", "--"]
+CMD ["/bin/bash", "-c", "source $HOME/bash.bashrc; /bin/bash"]
+
+USER $NB_UID
+WORKDIR $HOME
+VOLUME ["$HOME/host/"]
+
+RUN /usr/local/bin/fix-permissions $CONDA_DIR \
+  && /usr/local/bin/fix-permissions $HOME

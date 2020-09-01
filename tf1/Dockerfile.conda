@@ -1,0 +1,160 @@
+FROM whovianbase
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# SET CONDA ENV TF1
+
+ENV OLDPATH=$PATH \
+    PATH=/opt/conda/envs/tf1/bin:$PATH \
+    OLD_LD_LIB_PATH=$LD_LIBRARY_PATH \
+    LD_LIBRARY_PATH=/opt/conda/envs/tf1/libs:$LD_LIBRARY_PATH
+
+RUN conda create --force --name tf1 python=3.7 -c conda-forge/label/cf201901 \
+ --no-default-packages --strict-channel-priority --override-channels \
+ --quiet --yes \
+  && conda install -n tf1 --quiet --yes \
+    freeimage \
+    libtiff \
+    'conda-forge/label/cf202003::boost=1.70.0' \
+    'python-dateutil=2.8.1' \
+    'readline=8.0' \
+    'six=1.15.0' \
+    'numpy=1.19.1' \
+    'cython=0.29.21' \
+    'tini=0.18.0' \
+    'protobuf=3.13.0' \
+    'nodejs' \
+    'libpng=1.6.37' \
+    'kiwisolver=1.2.0' \
+    'pyparsing=2.4.7' \
+    'pillow=7.2.0' \
+    'conda-forge/label/cf201901::fuzzywuzzy' \
+    'pyyaml=5.3.1' \
+    'virtualenv=16.7.5' \
+    'imageio=2.9.0' \
+    'widgetsnbextension=3.5.1' \
+    'notebook=6.1.1' \
+#--------------------------------------------------------------------
+# NUMERICAL WORK
+    cudatoolkit \
+    'numba=0.48.0' \
+    'scipy=1.4.1' \
+    'pandas=1.1.1' \
+    'hdf5=1.10.6' \
+    'h5py=2.10.0' \
+#--------------------------------------------------------------------
+# MachineLearning
+  && conda install -n tf1 --quiet --yes \
+    'scikit-image' \
+    'scikit-learn' \
+    'tensorflow-gpu=1.15.0' \
+    'keras=2.3.1'  \
+    'keras-preprocessing' \
+  && /opt/conda/envs/tf1/bin/pip install --quiet --no-cache-dir \
+    imutils  \
+    pyfits \
+    seaborn  \
+    emcee  \
+    iminuit \
+    matplotlib \
+#--------------------------------------------------------------------
+# Jupyter Lab
+    jupyterhub \
+    jupyterlab \
+#--------------------------------------------------------------------
+    opencv-python\
+#--------------------------------------------------------------------
+  && conda clean --all -f -y \
+  && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR
+
+#--------------------------------------------------------------------
+# INSTALL OpenCV
+
+RUN git clone git://github.com/opencv/opencv.git /opencv \
+  && git clone git://github.com/opencv/opencv_contrib.git \
+  && cd /opencv \
+  && git checkout 4.4.0 \
+  && mkdir ./build \
+  && cd ./build \
+  && cmake -DCMAKE_INSTALL_PREFIX=/opt/conda/envs/tf1/ \
+     -DCMAKE_BUILD_TYPE=RELEASE \
+     -DOPENCV_EXTRA_MODULES_PATH=/opencv_contrib/modules \
+     -DPYTHON_EXECUTABLE=/opt/conda/envs/tf1/bin/python \
+     -DOPENCV_ENABLE_NONFREE=ON \
+     -DBUILD_PROTOBUF=ON \
+     -DBUILD_TIFF=ON \
+     -DWITH_CUDA=ON \
+     -DFORCE_VTK=ON \
+     -DWITH_EIGEN=ON \
+     -DWITH_FFMPEG=ON \
+     -DWITH_GTK=OFF \
+     -DWITH_JPEG=ON \
+     -DWITH_PNG=ON \
+     -DWITH_TBB=ON \
+     -DWITH_CUDNN=ON \
+     -DWITH_GDAL=OFF \
+     -DBUILD_EXAMPLES=ON \
+     -D INSTALL_C_EXAMPLES=ON \
+     -D INSTALL_PYTHON_EXAMPLES=ON \
+     -DENABLE_FAST_MATH=ON \
+     -DCUDA_FAST_MATH=ON \
+     -DCMAKE_C_COMPILER=gcc-7 \
+     -DCMAKE_CXX_COMPILER=g++-7 .. \
+  && cd /opencv/build \
+  && make VERBOSE=1 \
+  && make -j $MAKE_NUM_THREADS install \
+  && cd ../ \
+  && rm -rf /opencv \
+  && rm -rf /opencv_contrib \
+  && ldconfig \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR
+
+#--------------------------------------------------------------------
+# INSTALL DARKNET
+
+ENV PKG-CFG=/opt/conda/envs/tf1/bin/pkg-config
+
+#RUN git clone git://github.com/pjreddie/darknet.git \
+#  && mv ./darknet/ /opt/conda/envs/tf1/ \
+#  && cd /opt/conda/envs/tf1/darknet
+#COPY darknet/Makefile ./
+#RUN make -j $MAKE_NUM_THREADS \
+#  && /usr/local/bin/fix-permissions $HOME \
+#  && /usr/local/bin/fix-permissions $CONDA_DIR
+
+ENV PATH=$OLDPATH \
+  LD_LIBRARY_PATH=$OLD_LD_LIB_PATH
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+
+COPY jupyter_notebook_config.py $HOME/.jupyter/jupyter_notebook_config.py
+COPY bashrc $HOME/bash.bashrc
+
+RUN chmod +x /usr/bin/tini \
+  && chmod a+rwx $HOME/bash.bashrc \
+  && mkdir -p $HOME/host/ && chmod -R a+rwx $HOME/host/ \
+  && /usr/local/bin/fix-permissions $HOME \
+  && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
+  && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
+  && rm -rf ~/.cache/pip \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR \
+  && chown $NB_USER:$NB_GID $CONDA_DIR
+
+EXPOSE 8888 6006
+# Configure container startup
+ENTRYPOINT ["tini", "-g", "--"]
+CMD ["/bin/bash", "-c", "source $HOME/bash.bashrc; /bin/bash"]
+
+USER $NB_UID
+WORKDIR $HOME
+VOLUME ["$HOME/host/"]
+
+RUN /usr/local/bin/fix-permissions $CONDA_DIR \
+  && /usr/local/bin/fix-permissions $HOME
