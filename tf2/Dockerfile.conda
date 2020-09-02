@@ -73,45 +73,10 @@ RUN conda create --name tf2 python=3.7 -c conda-forge/label/cf202003 \
 #--------------------------------------------------------------------
 # INSTALL OpenCV
 
-RUN git clone git://github.com/opencv/opencv.git /opencv \
-  && git clone git://github.com/opencv/opencv_contrib.git \
-  && cd /opencv \
-  && git checkout 4.4.0 \
-  && mkdir ./build \
-  && cd ./build \
-  && cmake -DCMAKE_INSTALL_PREFIX=/opt/conda/envs/tf2/ \
-     -DCMAKE_BUILD_TYPE=RELEASE \
-     -DOPENCV_EXTRA_MODULES_PATH=/opencv_contrib/modules \
-     -DPYTHON_EXECUTABLE=/opt/conda/envs/tf2/bin/python \
-     -DOPENCV_ENABLE_NONFREE=ON \
-     -DBUILD_PROTOBUF=ON \
-     -DBUILD_TIFF=ON \
-     -DWITH_CUDA=ON \
-     -DFORCE_VTK=ON \
-     -DWITH_EIGEN=ON \
-     -DWITH_FFMPEG=ON \
-     -DWITH_GTK=OFF \
-     -DWITH_JPEG=ON \
-     -DWITH_PNG=ON \
-     -DWITH_TBB=ON \
-     -DWITH_CUDNN=ON \
-     -DWITH_GDAL=OFF \
-     -D INSTALL_C_EXAMPLES=ON \
-     -D INSTALL_PYTHON_EXAMPLES=ON \
-     -DBUILD_EXAMPLES=ON \
-     -DENABLE_FAST_MATH=ON \
-     -DCUDA_FAST_MATH=ON \
-     -DCMAKE_C_COMPILER=gcc-7 \
-     -DCMAKE_CXX_COMPILER=g++-7 .. \
-  && cd /opencv/build \
-  && make VERBOSE=1 \
-  && make -j $MAKE_NUM_THREADS install \
-  && cd ../ \
-  && rm -rf /opencv \
-  && rm -rf /opencv_contrib \
-  && ldconfig \
-  && /usr/local/bin/fix-permissions $HOME \
-  && /usr/local/bin/fix-permissions $CONDA_DIR
+RUN apt-get update \
+  && apt-get install -yq --fix-missing --no-install-recommends \
+    libgoogle-glog-dev libsnappy-dev libleveldb-dev libgflags-dev \
+    autoconf
 
 #--------------------------------------------------------------------
 # INSTALL DARKNET
