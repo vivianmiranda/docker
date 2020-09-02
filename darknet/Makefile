@@ -1,6 +1,6 @@
 GPU=1
 CUDNN=1
-OPENCV=0
+OPENCV=1
 OPENMP=1
 DEBUG=0
 
@@ -26,7 +26,7 @@ AR=ar
 ARFLAGS=rcs
 OPTS=-Ofast
 LDFLAGS= -lm -pthread
-COMMON= -Iinclude/ -Isrc/
+COMMON= -Iinclude/ -Isrc/ -Iusr/local/include
 CFLAGS=-Wall -Wno-unused-result -Wno-unknown-pragmas -Wfatal-errors -fPIC
 
 ifeq ($(OPENMP), 1)
@@ -42,8 +42,8 @@ CFLAGS+=$(OPTS)
 ifeq ($(OPENCV), 1)
 COMMON+= -DOPENCV
 CFLAGS+= -DOPENCV
-LDFLAGS+= `$(PKG-CFG) --libs opencv` -lstdc++
-COMMON+= `$(PKG-CFG) pkg-config --cflags opencv`
+LDFLAGS+= `$(PKG-CFG) --libs opencv4` -lstdc++
+COMMON+= `$(PKG-CFG) pkg-config --cflags opencv4`
 endif
 
 ifeq ($(GPU), 1)

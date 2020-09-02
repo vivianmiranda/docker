@@ -5,9 +5,7 @@ FROM whovianbase
 # --------------------------------------------------------------------------
 # SET CONDA ENV TF2
 
-ENV TIFF_CFLAGS="-I/opt/conda/envs/tf2/include" \
-    TIFF_LIBS="-L/opt/conda/envs/tf2/lib -ltiff" \
-    OLDPATH=$PATH \
+ENV OLDPATH=$PATH \
     PATH=/opt/conda/envs/tf2/bin:$PATH \
     OLD_LD_LIB_PATH=$LD_LIBRARY_PATH \
     LD_LIBRARY_PATH=/opt/conda/envs/tf2/libs:$LD_LIBRARY_PATH
@@ -71,25 +69,19 @@ RUN conda create --name tf2 python=3.7 -c conda-forge/label/cf202003 \
   && /usr/local/bin/fix-permissions $CONDA_DIR
 
 #--------------------------------------------------------------------
-# INSTALL OpenCV
-
-RUN apt-get update \
-  && apt-get install -yq --fix-missing --no-install-recommends \
-    libgoogle-glog-dev libsnappy-dev libleveldb-dev libgflags-dev \
-    autoconf
-
-#--------------------------------------------------------------------
 # INSTALL DARKNET
 
-#ENV PKG-CFG=/opt/conda/envs/tf2/bin/pkg-config
+ENV PKG-CFG=/usr/bin/pkg-config
 
-#RUN git clone --depth 1 git://github.com/pjreddie/darknet.git \
-#  && mv ./darknet/ /opt/conda/envs/tf2/ \
-#  && cd /opt/conda/envs/tf2/darknet
-#COPY darknet/Makefile ./
-#RUN make -j $MAKE_NUM_THREADS \
-#  && /usr/local/bin/fix-permissions $HOME \
-#  && /usr/local/bin/fix-permissions $CONDA_DIR
+RUN git clone git://github.com/pjreddie/darknet.git \
+  && mv ./darknet/ /opt/conda/envs/tf2/ \
+  && cd /opt/conda/envs/tf2/darknet \
+  && git checkout 4a03d405982aa1e1e911eac42b0ffce29cc8c8ef
+COPY darknet/Makefile ./
+RUN cd /opt/conda/envs/tf2/darknet \
+  && make -j $MAKE_NUM_THREADS \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR
 
 ENV PATH=$OLDPATH \
   LD_LIBRARY_PATH=$OLD_LD_LIB_PATH

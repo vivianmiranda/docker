@@ -10,9 +10,9 @@ ENV OLDPATH=$PATH \
     OLD_LD_LIB_PATH=$LD_LIBRARY_PATH \
     LD_LIBRARY_PATH=/opt/conda/envs/tf1/libs:$LD_LIBRARY_PATH
 
-RUN conda create --force --name tf1 python=3.7 -c conda-forge/label/cf201901 \
- --no-default-packages --strict-channel-priority --override-channels \
- --quiet --yes \
+RUN conda create --name tf1 python=3.7 -c conda-forge/label/cf201901 \
+  --no-default-packages --strict-channel-priority --override-channels \
+  --quiet --yes \
   && conda install -n tf1 --quiet --yes \
     freeimage \
     libtiff \
@@ -37,7 +37,6 @@ RUN conda create --force --name tf1 python=3.7 -c conda-forge/label/cf201901 \
     'notebook=6.1.1' \
 #--------------------------------------------------------------------
 # NUMERICAL WORK
-    cudatoolkit \
     'numba=0.48.0' \
     'scipy=1.4.1' \
     'pandas=1.1.1' \
@@ -45,7 +44,7 @@ RUN conda create --force --name tf1 python=3.7 -c conda-forge/label/cf201901 \
     'h5py=2.10.0' \
 #--------------------------------------------------------------------
 # MachineLearning
-  && conda install -n tf1 --quiet --yes \
+    'cudatoolkit' \
     'scikit-image' \
     'scikit-learn' \
     'tensorflow-gpu=1.15.0' \
@@ -63,68 +62,25 @@ RUN conda create --force --name tf1 python=3.7 -c conda-forge/label/cf201901 \
     jupyterhub \
     jupyterlab \
 #--------------------------------------------------------------------
-    opencv-python\
-#--------------------------------------------------------------------
   && conda clean --all -f -y \
   && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
   && /usr/local/bin/fix-permissions $HOME \
   && /usr/local/bin/fix-permissions $CONDA_DIR
 
 #--------------------------------------------------------------------
-# INSTALL OpenCV
-
-RUN git clone git://github.com/opencv/opencv.git /opencv \
-  && git clone git://github.com/opencv/opencv_contrib.git \
-  && cd /opencv \
-  && git checkout 4.4.0 \
-  && mkdir ./build \
-  && cd ./build \
-  && cmake -DCMAKE_INSTALL_PREFIX=/opt/conda/envs/tf1/ \
-     -DCMAKE_BUILD_TYPE=RELEASE \
-     -DOPENCV_EXTRA_MODULES_PATH=/opencv_contrib/modules \
-     -DPYTHON_EXECUTABLE=/opt/conda/envs/tf1/bin/python \
-     -DOPENCV_ENABLE_NONFREE=ON \
-     -DBUILD_PROTOBUF=ON \
-     -DBUILD_TIFF=ON \
-     -DWITH_CUDA=ON \
-     -DFORCE_VTK=ON \
-     -DWITH_EIGEN=ON \
-     -DWITH_FFMPEG=ON \
-     -DWITH_GTK=OFF \
-     -DWITH_JPEG=ON \
-     -DWITH_PNG=ON \
-     -DWITH_TBB=ON \
-     -DWITH_CUDNN=ON \
-     -DWITH_GDAL=OFF \
-     -DBUILD_EXAMPLES=ON \
-     -D INSTALL_C_EXAMPLES=ON \
-     -D INSTALL_PYTHON_EXAMPLES=ON \
-     -DENABLE_FAST_MATH=ON \
-     -DCUDA_FAST_MATH=ON \
-     -DCMAKE_C_COMPILER=gcc-7 \
-     -DCMAKE_CXX_COMPILER=g++-7 .. \
-  && cd /opencv/build \
-  && make VERBOSE=1 \
-  && make -j $MAKE_NUM_THREADS install \
-  && cd ../ \
-  && rm -rf /opencv \
-  && rm -rf /opencv_contrib \
-  && ldconfig \
-  && /usr/local/bin/fix-permissions $HOME \
-  && /usr/local/bin/fix-permissions $CONDA_DIR
-
-#--------------------------------------------------------------------
 # INSTALL DARKNET
 
-ENV PKG-CFG=/opt/conda/envs/tf1/bin/pkg-config
+ENV PKG-CFG=/usr/bin/pkg-config
 
-#RUN git clone git://github.com/pjreddie/darknet.git \
-#  && mv ./darknet/ /opt/conda/envs/tf1/ \
-#  && cd /opt/conda/envs/tf1/darknet
-#COPY darknet/Makefile ./
-#RUN make -j $MAKE_NUM_THREADS \
-#  && /usr/local/bin/fix-permissions $HOME \
-#  && /usr/local/bin/fix-permissions $CONDA_DIR
+RUN git clone git://github.com/pjreddie/darknet.git \
+  && mv ./darknet/ /opt/conda/envs/tf1/ \
+  && cd /opt/conda/envs/tf1/darknet \
+  && git checkout 4a03d405982aa1e1e911eac42b0ffce29cc8c8ef
+COPY darknet/Makefile ./
+RUN cd /opt/conda/envs/tf1/darknet \
+  && make -j $MAKE_NUM_THREADS \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR
 
 ENV PATH=$OLDPATH \
   LD_LIBRARY_PATH=$OLD_LD_LIB_PATH

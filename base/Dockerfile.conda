@@ -15,10 +15,10 @@ RUN apt-get update \
   && apt-get update \
   && apt-get install -yq --fix-missing gfortran-7 g++-7 \
     gcc-9 git autoconf dpkg git-lfs xz-utils pkg-config \
-    openmpi-bin gcc-7 gfortran-9 g++-9 python3.7-dev \
+    openmpi-bin gcc-7 gfortran-9 g++-9 python3.7-dev python3-pip python-pip \
   && apt-get update \
   && apt-get install -yq --fix-missing --no-install-recommends libgflags-dev \
-    libhdf5-dev liblapack-dev libopenblas-dev libarpack2-dev xz-utils nano \
+    libhdf5-dev liblapack-dev libopenblas-dev libarpack2-dev nano \
     libgtk2.0-dev libglib2.0-0 libfreetype6-dev make wget curl libleveldb-dev \
     sqlite3 libv4l-dev fonts-liberation tzdata unzip grep libsnappy-dev \
     sed libsqlite3-dev sudo locales fonts-dejavu libgoogle-glog-dev  \
@@ -37,16 +37,21 @@ RUN apt-get update \
   && rm -rf /usr/share/man/ \
   && ln -s /bin/tar /bin/gtar \
   && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
-  && locale-gen \
-# ------------------------------------------------------------------------
-  && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 9 \
+  && locale-gen
+
+RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 9 \
   && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 9 \
   && update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-9 9 \
   && update-alternatives --install /usr/bin/python python /usr/bin/python3.7 1 \
+  && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1 \
   && update-alternatives --set gcc /usr/bin/gcc-9 \
   && update-alternatives --set g++ /usr/bin/g++-9 \
   && update-alternatives --set gfortran /usr/bin/gfortran-9 \
   && update-alternatives --set python /usr/bin/python3.7 \
+  && update-alternatives --set python3 /usr/bin/python3.7 \
+# ------------------------------------------------------------------------
+  && python -m pip install pip --upgrade --quiet --no-cache-dir \
+  && pip install numpy==1.19.1 --quiet --no-cache-dir \
 # ------------------------------------------------------------------------
   && TINI_VERSION=`curl https://github.com/krallin/tini/releases/latest | grep -o "/v.*\"" | sed 's:^..\(.*\).$:\1:'` \
   && curl -L "https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini_${TINI_VERSION}.deb" > tini.deb \
@@ -179,6 +184,8 @@ RUN git clone git://github.com/opencv/opencv.git /opencv \
      -DPYTHON_EXECUTABLE=/usr/bin/python3.7/ \
      -DOPENCV_ENABLE_NONFREE=ON \
      -DBUILD_TIFF=OFF \
+     -DBUILD_TESTS=ON  \
+     -DOPENCV_GENERATE_PKGCONFIG=YES \
      -DWITH_CUDA=ON \
      -DWITH_CUDNN=ON \
      -DENABLE_FAST_MATH=ON \
@@ -192,7 +199,7 @@ RUN git clone git://github.com/opencv/opencv.git /opencv \
      -DWITH_TBB=ON \
      -DBUILD_EXAMPLES=ON \
      -DWITH_GDAL=OFF \
-     -D WITH_JAVA=OFF \
+     -DWITH_JAVA=OFF \
      -DINSTALL_C_EXAMPLES=ON \
      -DINSTALL_PYTHON_EXAMPLES=ON \
      -DCMAKE_C_COMPILER=gcc-7 \
