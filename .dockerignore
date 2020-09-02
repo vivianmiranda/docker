@@ -1,0 +1,44 @@
+# ignore .git and .cache folders
+.git
+.cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+*.log
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IPython Notebook
+.ipynb_checkpoints
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+.dockerignore
+**.pyc
+**/__pycache__
+.gitignore
+.git
+
+/tmp/*
+/log/*.log
+
+
+*.o
