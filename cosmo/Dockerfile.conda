@@ -15,10 +15,8 @@ RUN conda create --force --name cosmo python=3.7 -c conda-forge/label/cf201901 \
     'six=1.15.0' \
     'numpy=1.19.1' \
     'cython=0.29.21' \
-    'tini=0.18.0' \
     'protobuf=3.13.0' \
     'nodejs' \
-    'libpng=1.6.37' \
     'kiwisolver=1.2.0' \
     'pyparsing=2.4.7' \
     'pillow=7.2.0' \
@@ -48,7 +46,7 @@ RUN conda create --force --name cosmo python=3.7 -c conda-forge/label/cf201901 \
     'matplotlib' \
 #--------------------------------------------------------------------
 # Jupyter Lab
-    'jupyterhub' \
+    #'jupyterhub' \
     'jupyterlab' \
 #--------------------------------------------------------------------
   && conda clean --all -f -y \

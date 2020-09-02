@@ -44,7 +44,7 @@ RUN conda create --name tf2 python=3.7 -c conda-forge/label/cf202003 \
     'h5py=2.10.0' \
 #--------------------------------------------------------------------
 # MachineLearning
-    cudatoolkit \
+#    cudatoolkit \
     'scikit-image=0.16.2' \
     'scikit-learn=0.23.2' \
     'tensorflow-gpu=2.2.0' \
@@ -60,7 +60,7 @@ RUN conda create --name tf2 python=3.7 -c conda-forge/label/cf202003 \
     matplotlib \
 #--------------------------------------------------------------------
 # Jupyter Lab
-    jupyterhub \
+#    jupyterhub \
     jupyterlab \
 #--------------------------------------------------------------------
   && conda clean --all -f -y \

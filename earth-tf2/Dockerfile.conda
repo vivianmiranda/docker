@@ -5,13 +5,15 @@ FROM whovianbase
 # --------------------------------------------------------------------------
 # SET CONDA ENV EARTH-TF2
 
-ENV PROJ_LIB=/opt/conda/envs/earth-tf2/share/proj \
-   GDAL_DATA=/opt/conda/envs/earth-tf2/share/gdal \
-   GDAL_CONFIG=/opt/conda/envs/earth-tf2/bin/gdal-config \
-   OLDPATH=$PATH \
-   PATH=/opt/conda/envs/earth-tf2/bin:$PATH \
-   OLD_LD_LIB_PATH=$LD_LIBRARY_PATH \
-   LD_LIBRARY_PATH=/opt/conda/envs/earth-tf2/libs:$LD_LIBRARY_PATH
+ENV TIFF_CFLAGS="-I/opt/conda/envs/earth-tf2/include" \
+    TIFF_LIBS="-L/opt/conda/envs/earth-tf2/lib -ltiff" \
+    PROJ_LIB=/opt/conda/envs/earth-tf2/share/proj \
+    GDAL_DATA=/opt/conda/envs/earth-tf2/share/gdal \
+    GDAL_CONFIG=/opt/conda/envs/earth-tf2/bin/gdal-config \
+    OLDPATH=$PATH \
+    PATH=/opt/conda/envs/earth-tf2/bin:$PATH \
+    OLD_LD_LIB_PATH=$LD_LIBRARY_PATH \
+    LD_LIBRARY_PATH=/opt/conda/envs/earth-tf2/libs:$LD_LIBRARY_PATH
 
 RUN conda create --name earth-tf2 python=3.7 -c conda-forge/label/cf202003 \
   --no-default-packages --strict-channel-priority --override-channels \
@@ -63,7 +65,7 @@ RUN conda create --name earth-tf2 python=3.7 -c conda-forge/label/cf202003 \
     matplotlib \
 #--------------------------------------------------------------------
 # Jupyter Lab
-    jupyterhub \
+#    jupyterhub \
     jupyterlab \
 #--------------------------------------------------------------------
   && conda clean --all -f -y \
@@ -115,7 +117,7 @@ RUN conda install -n earth-tf2 --quiet --yes \
   && make -j $MAKE_NUM_THREADS \
   && make install \
   && cd ../ \
-  && rm -rf gdal-3.1.2/
+  && rm -rf gdal-3.1.2/ \
 #--------------------------------------------------------------------
   && wget https://github.com/libspatialindex/libspatialindex/releases/download/1.9.3/spatialindex-src-1.9.3.tar.gz \
   && tar zxvf spatialindex-src-1.9.3.tar.gz \
