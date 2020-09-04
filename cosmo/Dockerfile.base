@@ -83,6 +83,7 @@ RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su \
     && sed -i.bak -e 's/^%admin/#%admin/' /etc/sudoers \
     && sed -i.bak -e 's/^%sudo/#%sudo/' /etc/sudoers \
     && useradd -m -s /bin/bash -N -u $NB_UID $NB_USER \
+    && groupmod -g 1000 users \
     && mkdir -p $CONDA_DIR \
     && chown $NB_USER:$NB_GID $CONDA_DIR \
     && chmod g+w /etc/passwd \
@@ -165,6 +166,19 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && rm -rf ./spdlog \
 #--------------------------------------------------------------------
   && ldconfig
+
+#--------------------------------------------------------------------
+# INSTALL GOSU
+ARG GOSU_VERSION=1.12
+RUN dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')" \
+ && curl -sSL "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-${dpkgArch}" >/usr/bin/gosu \
+ && chmod 755 /usr/bin/gosu \
+ && gosu nobody true
+
+#--------------------------------------------------------------------
+# INSTALL wait-for-it.sh
+RUN curl -sSL https://github.com/vishnubob/wait-for-it/raw/master/wait-for-it.sh >/usr/bin/wait-for-it.sh \
+ && chmod 755 /usr/bin/wait-for-it.sh
 
 #--------------------------------------------------------------------
 # INSTALL CONDA
