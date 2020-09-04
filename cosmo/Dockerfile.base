@@ -7,6 +7,11 @@ ARG NB_GID=1000
 # Fix DL4006
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# BASIC UBUNTU INSTALLATION
+
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update \
  && apt-get install -yq --fix-missing  --no-install-recommends \
@@ -14,15 +19,15 @@ RUN apt-get update \
   && add-apt-repository ppa:ubuntu-toolchain-r/test \
   && apt-get update \
   && apt-get install -yq --fix-missing --no-install-recommends \
-    gcc-9 git autoconf dpkg git-lfs nano git xz-utils pkg-config openmpi-common \
-    openmpi-bin gfortran-9 g++-9 python3.7-dev python3-pip \
+    gcc-9 git autoconf dpkg git-lfs nano git xz-utils pkg-config \
+    gfortran-9 g++-9 python3.7-dev python3-pip \
   && apt-get install -yq --fix-missing --no-install-recommends locales \
-    libhdf5-dev liblapack-dev libopenblas-dev libarpack2-dev wget curl \
-    libglib2.0-0 libfreetype6-dev unzip tzdata make \
+    libhdf5-dev wget curl \
+    libglib2.0-0 libfreetype6-dev unzip tzdata make python3-apt \
     fonts-dejavu fonts-liberation texlive-xetex texlive-fonts-recommended \
     texlive-plain-generic libtool automake zlib1g-dev libcurl4-gnutls-dev \
-    ca-certificates libssl-dev libtiff5-dev grep sed \
-    libtbb-dev libeigen3-dev autoconf sudo gfortran-10 g++-10 gcc-10 \
+    ca-certificates libssl-dev libtiff5-dev grep sed libtbb-dev autoconf sudo \
+  # liblapack-dev libopenblas-dev libarpack2-dev libeigen3-dev
 # ------------------------------------------------------------------------
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
@@ -50,7 +55,29 @@ RUN python3.7 -m pip install pip --quiet --no-cache-dir \
   && curl -L "https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini_${TINI_VERSION}.deb" > tini.deb \
   && dpkg -i tini.deb \
   && rm tini.deb \
-  && apt-get clean
+  && apt-get clean \
+# --------------------------------------------------------------------------
+  && curl -SL https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz | tar -xJC . \
+  && mv clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04 clang_10.0.0 \
+  && echo 'export PATH=/clang_10.0.0/bin:$PATH' >> ~/.bashrc \
+  && echo 'export LD_LIBRARY_PATH=/clang_10.0.0/lib:$LD_LIBRARY_PATH' >> ~/.bashrc
+
+# --------------------------------------------------------------------------
+# Install OpenSSH for MPI to communicate between containers
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssh-client openssh-server \
+  && mkdir -p /var/run/sshd
+
+# Allow OpenSSH to talk to containers without asking for confirmation
+RUN cat /etc/ssh/ssh_config | grep -v StrictHostKeyChecking > /etc/ssh/ssh_config.new \
+  && echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config.new \
+  && mv /etc/ssh/ssh_config.new /etc/ssh/ssh_config
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# GLOBAL ENV VARIABLES
 
 ENV CONDA_DIR=/opt/conda \
     SHELL=/bin/bash \
@@ -95,6 +122,8 @@ RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su \
 # --------------------------------------------------------------------------
 # INSTALL CORE RESEARCH LIBRARIES FROM SOURCE
 
+ENV OPENMPI_VERSION=4.0.5
+
 RUN git clone git://github.com/Kitware/CMake.git \
   && cd ./CMake \
   && git checkout v3.16.0 \
@@ -109,6 +138,33 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && mv proto3/bin/* /usr/local/bin \
   && mv proto3/include/* /usr/local/include \
   && rm -rf proto3 protoc-3.0.0-linux-x86_64.zip \
+#--------------------------------------------------------------------
+  && wget --no-check-certificate https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz \
+    && tar xvzf openmpi-${OPENMPI_VERSION}.tar.gz \
+    && rm -rf openmpi-${OPENMPI_VERSION}.tar.gz \
+    && cd openmpi-${OPENMPI_VERSION} \
+    && CFLAGS=-O3 CXXFLAGS=-O3 ./configure --prefix=/usr \
+      --enable-orterun-prefix-by-default --enable-wrapper-rpath \
+    && make -j $MAKE_NUM_THREADS all \
+    && make install \
+    && rm -rf openmpi-${OPENMPI_VERSION} \
+#--------------------------------------------------------------------
+  && git clone https://github.com/xianyi/OpenBLAS.git \
+  && cd OpenBLAS \
+  && make -j $MAKE_NUM_THREADS USE_OPENMP=1 all \
+  && make install PREFIX=/usr/local \
+  && rm -rf OpenBLAS/ \
+#--------------------------------------------------------------------
+  && wget http://www.netlib.org/lapack/lapack-3.9.0.tgz \
+  && tar xvzf lapack-3.9.0.tgz \
+  && rm lapack-3.9.0.tgz \
+  && cd lapack-3.9.0 \
+  && mkdir build \
+  && cd build \
+  && cmake -DBUILD_SHARED_LIBS=TRUE --prefix=/usr/local --log-level=ERROR .. \
+  && make -j $MAKE_NUM_THREADS all \
+  && make install \
+  && rm -rf lapack-3.9.0/ \
 #--------------------------------------------------------------------
   && wget -q http://ftp.wayne.edu/gnu/gsl/gsl-2.6.tar.gz \
   && tar zxvf gsl-2.6.tar.gz \
@@ -164,6 +220,16 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && make install \
   && cd ../ \
   && rm -rf ./spdlog \
+#--------------------------------------------------------------------
+  && ldconfig
+
+RUN git clone git://github.com/libigl/eigen.git \
+  && mkdir eigein_build_dir \
+  && cd eigein_build_dir \
+  && cmake /eigen \
+  && make install \
+  && rm -rf eigein_build_dir \
+  && rm -rf eigen \
 #--------------------------------------------------------------------
   && ldconfig
 

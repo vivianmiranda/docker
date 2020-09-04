@@ -28,22 +28,25 @@ RUN conda create --force --name cosmo python=3.7 -c conda-forge/label/cf201901 \
     'notebook=6.1.1' \
 #--------------------------------------------------------------------
 # NUMERICAL WORK
-    'numba=0.41.0' \
     'scipy=1.5.2' \
     'pandas=1.1.1' \
-    'mpi4py=3.0.3' \
     'hdf5=1.10.6' \
     'h5py=2.10.0' \
     'astropy=4.0.1.post1' \
-    'pybind11=2.5.0' \
-#--------------------------------------------------------------------
-  && /opt/conda/envs/cosmo/bin/pip install --quiet --no-cache-dir \
+    'pybind11=2.5.0'
+
+RUN /opt/conda/envs/cosmo/bin/pip install --quiet --no-cache-dir \
+    'tokenizers==0.8.1' \
+    'numba==0.50.1' \
     'GetDist==1.1.2' \
-    'pyfits' \
-    'seaborn' \
-    'emcee' \
-    'iminuit' \
-    'matplotlib' \
+    'pyfits==3.5' \
+    'seaborn==0.10.1' \
+    'emcee==3.0.2' \
+    'iminuit==1.4.9' \
+    'py-bobyqa==1.2' \
+    'wget==3.2' \
+    'matplotlib==3.3.1' \
+    'mpi4py==3.0.3' \
 #--------------------------------------------------------------------
 # Jupyter Lab
     'jupyterlab' \
