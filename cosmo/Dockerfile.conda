@@ -5,11 +5,10 @@ FROM whoviancosmobase
 # --------------------------------------------------------------------------
 # SET CONDA ENV COSMO
 
-RUN conda create --force --name cosmo python=3.7 -c conda-forge/label/cf201901 \
- --no-default-packages --strict-channel-priority --override-channels \
- --quiet --yes \
-  && conda install -n cosmo --quiet --yes \
-    'boost=1.69' \
+RUN conda create --force --name cosmo python=3.7 --no-default-packages \
+  --quiet --yes
+
+RUN conda install -n cosmo --quiet --yes \
     'python-dateutil=2.8.1' \
     'readline=8.0' \
     'six=1.15.0' \
@@ -20,14 +19,16 @@ RUN conda create --force --name cosmo python=3.7 -c conda-forge/label/cf201901 \
     'kiwisolver=1.2.0' \
     'pyparsing=2.4.7' \
     'pillow=7.2.0' \
-    'conda-forge/label/cf201901::fuzzywuzzy' \
+    'fuzzywuzzy=0.17.0' \
     'pyyaml=5.3.1' \
-    'virtualenv=16.0.0' \
+    'virtualenv=20.0.20' \
     'imageio=2.9.0' \
-    'widgetsnbextension=3.5.1' \
     'notebook=6.1.1' \
+    'gcc_linux-64=9.3.0'
+
 #--------------------------------------------------------------------
 # NUMERICAL WORK
+RUN conda install -n cosmo --quiet --yes \
     'scipy=1.5.2' \
     'pandas=1.1.1' \
     'hdf5=1.10.6' \
@@ -35,6 +36,8 @@ RUN conda create --force --name cosmo python=3.7 -c conda-forge/label/cf201901 \
     'astropy=4.0.1.post1' \
     'pybind11=2.5.0'
 
+#--------------------------------------------------------------------
+# PIP
 RUN /opt/conda/envs/cosmo/bin/pip install --quiet --no-cache-dir \
     'tokenizers==0.8.1' \
     'numba==0.50.1' \
@@ -47,9 +50,6 @@ RUN /opt/conda/envs/cosmo/bin/pip install --quiet --no-cache-dir \
     'wget==3.2' \
     'matplotlib==3.3.1' \
     'mpi4py==3.0.3' \
-#--------------------------------------------------------------------
-# Jupyter Lab
-    'jupyterlab' \
 #--------------------------------------------------------------------
   && conda clean --all -f -y \
   && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
@@ -73,7 +73,7 @@ RUN chmod +x /usr/bin/tini \
   && /usr/local/bin/fix-permissions $CONDA_DIR \
   && chown $NB_USER:$NB_GID $CONDA_DIR
 
-EXPOSE 8888 6006
+EXPOSE 8888
 
 ENTRYPOINT ["tini", "-g", "--"]
 CMD ["/bin/bash", "-c", "source $HOME/bash.bashrc; /bin/bash"]

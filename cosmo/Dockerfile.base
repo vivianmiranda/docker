@@ -89,6 +89,7 @@ ENV CONDA_DIR=/opt/conda \
     LANGUAGE=en_US.UTF-8 \
     HOME=/home/$NB_USER \
     CONDAV=4.8.3 \
+    GOSU_VERSION=1.12 \
     MAKE_NUM_THREADS=8
 
 # --------------------------------------------------------------------------
@@ -221,12 +222,10 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && cd ../ \
   && rm -rf ./spdlog \
 #--------------------------------------------------------------------
-  && ldconfig
-
-RUN git clone git://github.com/libigl/eigen.git \
+  && git clone git://github.com/libigl/eigen.git \
   && mkdir eigein_build_dir \
   && cd eigein_build_dir \
-  && cmake /eigen \
+  && cmake ../eigen \
   && make install \
   && rm -rf eigein_build_dir \
   && rm -rf eigen \
@@ -234,12 +233,19 @@ RUN git clone git://github.com/libigl/eigen.git \
   && ldconfig
 
 #--------------------------------------------------------------------
+RUN wget https://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.gz \
+  && tar zxvf boost_1_74_0.tar.gz \
+  && rm boost_1_74_0.tar.gz \
+  && cd boost_1_74_0 \
+  && ./bootstrap.sh \
+  && ./b2  --with-regex install \
+  && rm -rf boost_1_74_0 \
+#--------------------------------------------------------------------
 # INSTALL GOSU
-ARG GOSU_VERSION=1.12
-RUN dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')" \
- && curl -sSL "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-${dpkgArch}" >/usr/bin/gosu \
- && chmod 755 /usr/bin/gosu \
- && gosu nobody true
+  && dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')" \
+  && curl -sSL "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-${dpkgArch}" >/usr/bin/gosu \
+  && chmod 755 /usr/bin/gosu \
+  && gosu nobody true
 
 #--------------------------------------------------------------------
 # INSTALL wait-for-it.sh
@@ -253,9 +259,11 @@ RUN wget --quiet \
 https://repo.continuum.io/miniconda/Miniconda3-py37_${CONDAV}-Linux-x86_64.sh \
   && /bin/bash Miniconda3-py37_${CONDAV}-Linux-x86_64.sh -f -b -p $CONDA_DIR \
   && rm Miniconda3-py37_${CONDAV}-Linux-x86_64.sh \
+  && $CONDA_DIR/bin/conda config --system --prepend channels conda-forge \
   && $CONDA_DIR/bin/conda config --system --set auto_update_conda false \
   && $CONDA_DIR/bin/conda config --system --set show_channel_urls true \
   && $CONDA_DIR/bin/conda config --system --set auto_activate_base false \
+  && $CONDA_DIR/bin/conda config --system --set channel_priority strict \
   && $CONDA_DIR/bin/conda clean --all -f -y \
   && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
   && /usr/local/bin/fix-permissions $HOME \
