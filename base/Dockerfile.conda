@@ -1,5 +1,4 @@
-#FROM nvidia/cuda:10.2-devel-ubuntu18.04
-FROM nvidia/cuda:10.2-cudnn8-runtime-ubuntu18.04
+FROM nvidia/cuda:10.2-devel-ubuntu18.04
 
 ARG NB_USER="whovian"
 ARG NB_UID=1000
@@ -12,35 +11,28 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update \
   && apt-get install -yq --fix-missing software-properties-common  \
     apt-utils build-essential \
-  && add-apt-repository ppa:ubuntu-toolchain-r/test \
-  && apt-get update \
-  && apt-get install -yq --fix-missing gcc-7 gfortran-7 g++-7 \
-    git autoconf dpkg git-lfs xz-utils pkg-config \
-    openmpi-bin python3.7-dev python3-pip python-pip \
-  && apt-get update \
+  && apt-get install -yq --fix-missing --no-install-recommends gcc-7 \
+    gfortran-7 g++-7 git autoconf dpkg git-lfs xz-utils pkg-config \
+    python3.7-dev python3-pip python-pip python3.7-venv \
   && apt-get install -yq --fix-missing --no-install-recommends libgflags-dev \
-    libhdf5-dev liblapack-dev libopenblas-dev libarpack2-dev nano \
-    libgtk2.0-dev libglib2.0-0 libfreetype6-dev make wget curl libleveldb-dev \
+    libhdf5-dev libarpack2-dev nano make wget curl \
+    libgtk2.0-dev libglib2.0-0 libfreetype6-dev libleveldb-dev \
     sqlite3 libv4l-dev fonts-liberation tzdata unzip grep libsnappy-dev \
     sed libsqlite3-dev sudo locales fonts-dejavu libgoogle-glog-dev  \
     texlive-xetex texlive-fonts-recommended texlive-plain-generic libx264-dev \
     libtool automake zlib1g-dev libcurl4-gnutls-dev ca-certificates libssl-dev \
-    libtiff5-dev libpng-dev run-one ffmpeg libprotobuf-dev protobuf-compiler \
+    libtiff5-dev libpng-dev run-one ffmpeg \
+    #libprotobuf-dev protobuf-compiler  \
     libjpeg-dev libtbb-dev dvipng libopenexr-dev libavcodec-dev libeigen3-dev \
     libjpeg8-dev libavformat-dev libswscale-dev ca-certificates-java \
-    "openjdk-11-jre-headless"  openmpi-common libatlas-base-dev libgtk-3-dev \
-    libxvidcore-dev \
+    "openjdk-11-jre-headless" libatlas-base-dev libgtk-3-dev libxvidcore-dev \
 # ------------------------------------------------------------------------
-  && apt-get clean \
-  && apt-get autoremove --yes \
-  && rm -rf /var/lib/apt/lists/* \
-  && rm -rf /usr/share/doc/ \
-  && rm -rf /usr/share/man/ \
   && ln -s /bin/tar /bin/gtar \
   && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
-  && locale-gen
-
-RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 9 \
+  && locale-gen \
+# ------------------------------------------------------------------------
+  && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.7 \
+  && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 9 \
   && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 9 \
   && update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-7 9 \
   && update-alternatives --install /usr/bin/python python /usr/bin/python3.7 1 \
@@ -58,7 +50,32 @@ RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 9 \
   && curl -L "https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini_${TINI_VERSION}.deb" > tini.deb \
   && dpkg -i tini.deb \
   && rm tini.deb \
-  && apt-get clean
+# --------------------------------------------------------------------------
+#  && curl -SL https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz | tar -xJC . \
+#  && mv clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04 clang_10.0.0 \
+#  && echo 'export PATH=/clang_10.0.0/bin:$PATH' >> ~/.bashrc \
+#  && echo 'export LD_LIBRARY_PATH=/clang_10.0.0/lib:$LD_LIBRARY_PATH' >> ~/.bashrc \
+# --------------------------------------------------------------------------
+# Install OpenSSH for MPI to communicate between containers
+  && apt-get update \
+  && apt-get install -y --no-install-recommends openssh-client openssh-server \
+  && mkdir -p /var/run/sshd \
+# --------------------------------------------------------------------------
+# Allow OpenSSH to talk to containers without asking for confirmation
+  && cat /etc/ssh/ssh_config | grep -v StrictHostKeyChecking > /etc/ssh/ssh_config.new \
+  && echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config.new \
+  && mv /etc/ssh/ssh_config.new /etc/ssh/ssh_config \
+# --------------------------------------------------------------------------
+  && apt-get clean \
+  && apt-get autoremove --yes \
+  && rm -rf /var/lib/apt/lists/* \
+  && rm -rf /usr/share/doc/ \
+  && rm -rf /usr/share/man/
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# GLOBAL ENV VARIABLES
 
 ENV CONDA_DIR=/opt/conda \
     SHELL=/bin/bash \
@@ -70,37 +87,28 @@ ENV CONDA_DIR=/opt/conda \
     LANGUAGE=en_US.UTF-8 \
     HOME=/home/$NB_USER \
     CONDAV=4.8.3 \
+    GOSU_VERSION=1.12 \
     MAKE_NUM_THREADS=8
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
+
 # Copy a script that we will use to correct permissions
 # after running certain commands
-
 COPY fix-permissions /usr/local/bin/fix-permissions
-RUN chmod a+rx /usr/local/bin/fix-permissions
-
+RUN chmod a+rx /usr/local/bin/fix-permissions \
+# --------------------------------------------------------------------------
 # https://github.com/jupyter/docker-stacks/pull/826
 # Enable prompt color in the skeleton .bashrc before creating the NB_USER
-RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc
-
-# Create NB_USER wtih name jovyan user with UID=1000 and in the 'users' group
-# and make sure these dirs are writable by the `users` group.
-RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su \
-    && sed -i.bak -e 's/^%admin/#%admin/' /etc/sudoers \
-    && sed -i.bak -e 's/^%sudo/#%sudo/' /etc/sudoers \
-    && useradd -m -s /bin/bash -N -u $NB_UID $NB_USER \
-    && mkdir -p $CONDA_DIR \
-    && chown $NB_USER:$NB_GID $CONDA_DIR \
-    && chmod g+w /etc/passwd \
-    && /usr/local/bin/fix-permissions $HOME \
-    && /usr/local/bin/fix-permissions $CONDA_DIR
+  && sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # INSTALL CORE RESEARCH LIBRARIES FROM SOURCE
+
+ENV OPENMPI_VERSION=4.0.5
 
 RUN git clone git://github.com/Kitware/CMake.git \
   && cd ./CMake \
@@ -116,6 +124,36 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && mv proto3/bin/* /usr/local/bin \
   && mv proto3/include/* /usr/local/include \
   && rm -rf proto3 protoc-3.0.0-linux-x86_64.zip \
+#--------------------------------------------------------------------
+  && wget --no-check-certificate https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz \
+  && tar xvzf openmpi-${OPENMPI_VERSION}.tar.gz \
+  && rm -rf openmpi-${OPENMPI_VERSION}.tar.gz \
+  && cd openmpi-${OPENMPI_VERSION} \
+  && CFLAGS=-O3 CXXFLAGS=-O3 ./configure --prefix=/usr \
+    --enable-orterun-prefix-by-default --enable-wrapper-rpath \
+  && make -j $MAKE_NUM_THREADS all \
+  && make install \
+  && cd ../ \
+  && rm -rf openmpi-${OPENMPI_VERSION} \
+#--------------------------------------------------------------------
+  && git clone https://github.com/xianyi/OpenBLAS.git \
+  && cd OpenBLAS \
+  && make -j $MAKE_NUM_THREADS USE_OPENMP=1 all \
+  && make install PREFIX=/usr/local \
+  && cd ../ \
+  && rm -rf OpenBLAS/ \
+#--------------------------------------------------------------------
+  && wget http://www.netlib.org/lapack/lapack-3.9.0.tgz \
+  && tar xvzf lapack-3.9.0.tgz \
+  && rm lapack-3.9.0.tgz \
+  && cd lapack-3.9.0 \
+  && mkdir build \
+  && cd build \
+  && cmake -DBUILD_SHARED_LIBS=TRUE --prefix=/usr/local --log-level=ERROR .. \
+  && make -j $MAKE_NUM_THREADS all \
+  && make install \
+  && cd ../../ \
+  && rm -rf lapack-3.9.0/ \
 #--------------------------------------------------------------------
   && wget -q http://ftp.wayne.edu/gnu/gsl/gsl-2.6.tar.gz \
   && tar zxvf gsl-2.6.tar.gz \
@@ -157,21 +195,6 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && cd ../ \
   && rm -rf armadillo-9.200.7/ \
 #--------------------------------------------------------------------
-  && git clone git://github.com/RUrlus/carma.git \
-  && cd ./carma \
-  && cp -r ./include/carma/ /usr/local/carma \
-  && cd ../ \
-  && rm -rf carma/ \
-#--------------------------------------------------------------------
-  && git clone git://github.com/gabime/spdlog.git \
-  && cd ./spdlog \
-  && git checkout v1.7.0  \
-  && cmake --log-level=ERROR . \
-  && make -j $MAKE_NUM_THREADS all -Wno-dev \
-  && make install \
-  && cd ../ \
-  && rm -rf ./spdlog \
-#--------------------------------------------------------------------
   && ldconfig \
 #--------------------------------------------------------------------
   && git clone git://github.com/opencv/opencv.git /opencv \
@@ -205,14 +228,60 @@ RUN git clone git://github.com/Kitware/CMake.git \
      -DINSTALL_PYTHON_EXAMPLES=ON \
      -DCMAKE_C_COMPILER=gcc-7 \
      -DCMAKE_CXX_COMPILER=g++-7 .. \
-  && cd /opencv/build \
   && make -j $MAKE_NUM_THREADS \
   && make install \
-  && cd ../ \
+  && cd ../../ \
   && rm -rf /opencv \
   && rm -rf /opencv_contrib \
   && ldconfig \
-  && /usr/local/bin/fix-permissions $HOME
+  && /usr/local/bin/fix-permissions $HOME \
+#--------------------------------------------------------------------
+  && git clone git://github.com/libigl/eigen.git \
+  && mkdir eigein_build_dir \
+  && cd eigein_build_dir \
+  && cmake ../eigen \
+  && make install \
+  && cd ../ \
+  && rm -rf eigein_build_dir \
+  && rm -rf eigen \
+#--------------------------------------------------------------------
+  && wget https://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.gz \
+  && tar zxvf boost_1_74_0.tar.gz \
+  && rm boost_1_74_0.tar.gz \
+  && cd boost_1_74_0 \
+  && ./bootstrap.sh \
+  && ./b2  --with-regex install \
+  && cd ../ \
+  && rm -rf boost_1_74_0 \
+#--------------------------------------------------------------------
+# INSTALL GOSU
+  && dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')" \
+  && curl -sSL "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-${dpkgArch}" > /usr/bin/gosu \
+  && chmod 755 /usr/bin/gosu \
+  && gosu nobody true \
+#--------------------------------------------------------------------
+# INSTALL wait-for-it.sh
+  && curl -sSL https://github.com/vishnubob/wait-for-it/raw/master/wait-for-it.sh >/usr/bin/wait-for-it.sh \
+  && chmod 755 /usr/bin/wait-for-it.sh \
+#--------------------------------------------------------------------
+  && ldconfig
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Create NB_USER wtih name jovyan user with UID=1000 and in the 'users' group
+# and make sure these dirs are writable by the `users` group.
+
+RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su \
+    && sed -i.bak -e 's/^%admin/#%admin/' /etc/sudoers \
+    && sed -i.bak -e 's/^%sudo/#%sudo/' /etc/sudoers \
+    && useradd -m -s /bin/bash -N -u $NB_UID $NB_USER \
+    && groupmod -g 1000 users \
+    && mkdir -p $CONDA_DIR \
+    && chown $NB_USER:$NB_GID $CONDA_DIR \
+    && chmod g+w /etc/passwd \
+    && /usr/local/bin/fix-permissions $HOME \
+    && /usr/local/bin/fix-permissions $CONDA_DIR
 
 #--------------------------------------------------------------------
 # INSTALL CONDA
@@ -224,6 +293,8 @@ https://repo.continuum.io/miniconda/Miniconda3-py37_${CONDAV}-Linux-x86_64.sh \
   && $CONDA_DIR/bin/conda config --system --set auto_update_conda false \
   && $CONDA_DIR/bin/conda config --system --set show_channel_urls true \
   && $CONDA_DIR/bin/conda config --system --set auto_activate_base false \
+  && $CONDA_DIR/bin/conda config --system --prepend channels conda-forge \
+  && $CONDA_DIR/bin/conda config --system --set channel_priority strict \
   && $CONDA_DIR/bin/conda clean --all -f -y \
   && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
   && /usr/local/bin/fix-permissions $HOME \
