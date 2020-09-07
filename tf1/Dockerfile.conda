@@ -1,4 +1,4 @@
-FROM whovianbase
+FROM whovian-base:latest
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -10,57 +10,55 @@ ENV OLDPATH=$PATH \
     OLD_LD_LIB_PATH=$LD_LIBRARY_PATH \
     LD_LIBRARY_PATH=/opt/conda/envs/tf1/libs:$LD_LIBRARY_PATH
 
-RUN conda create --name tf1 python=3.7 -c conda-forge/label/cf201901 \
-  --no-default-packages --strict-channel-priority --override-channels \
-  --quiet --yes \
+RUN conda create --name tf1 python=3.7 --quiet --yes \
   && conda install -n tf1 --quiet --yes \
-    freeimage \
-    libtiff \
-    'conda-forge/label/cf202003::boost=1.70.0' \
-    'python-dateutil=2.8.1' \
-    'readline=8.0' \
-    'six=1.15.0' \
-    'numpy=1.19.1' \
-    'cython=0.29.21' \
-    'tini=0.18.0' \
-    'protobuf=3.13.0' \
-    'nodejs' \
-    'libpng=1.6.37' \
-    'kiwisolver=1.2.0' \
-    'pyparsing=2.4.7' \
-    'pillow=7.2.0' \
-    'conda-forge/label/cf201901::fuzzywuzzy' \
-    'pyyaml=5.3.1' \
-    'virtualenv=16.7.5' \
-    'imageio=2.9.0' \
-    'widgetsnbextension=3.5.1' \
-    'notebook=6.1.1' \
+    'conda-forge::libgcc-ng=9.3.0' \
+    'conda-forge::libstdcxx-ng=9.3.0' \
+    'conda-forge::gcc_linux-64=9.3.0' \
+    'conda-forge::gxx_linux-64=9.3.0' \
+    'conda-forge::freeimage=3.18.0' \
+    'conda-forge::libtiff=4.1.0' \
+    'conda-forge::python-dateutil=2.8.1' \
+    'conda-forge::readline=8.0' \
+    'conda-forge::six=1.15.0' \
+    'conda-forge::numpy=1.19.1' \
+    'conda-forge::cython=0.29.21' \
+    'conda-forge::tini=0.18.0' \
+    'conda-forge::protobuf=3.13.0' \
+    'conda-forge::nodejs' \
+    'conda-forge::libpng=1.6.37' \
+    'conda-forge::kiwisolver=1.2.0' \
+    'conda-forge::pyparsing=2.4.7' \
+    'conda-forge::pillow=7.2.0' \
+    'conda-forge::fuzzywuzzy=0.17.0' \
+    'conda-forge::pyyaml=5.3.1' \
+    'conda-forge::virtualenv=20.0.20' \
+    'conda-forge::imageio=2.9.0' \
+    'conda-forge::notebook=6.1.1' \
+    'conda-forge::giflib=5.2.1' \
+    'conda-forge::openjpeg=2.3.1'\
+    'conda-forge::jpeg=9d'\
+    'conda-forge::matplotlib=3.3.1' \
+    'conda-forge::imutils=0.5.3' \
 #--------------------------------------------------------------------
 # NUMERICAL WORK
-    'numba=0.48.0' \
-    'scipy=1.4.1' \
-    'pandas=1.1.1' \
-    'hdf5=1.10.6' \
-    'h5py=2.10.0' \
+    'conda-forge::numba=0.50.1' \
+    'conda-forge::scipy=1.4.1' \
+    'conda-forge::pandas=1.1.1' \
+    'conda-forge::hdf5=1.10.6' \
+    'conda-forge::h5py=2.10.0' \
 #--------------------------------------------------------------------
 # MachineLearning
-    'cudatoolkit' \
-    'scikit-image' \
-    'scikit-learn' \
-    'tensorflow-gpu=1.15.0' \
-    'keras=2.3.1'  \
-    'keras-preprocessing' \
-  && /opt/conda/envs/tf1/bin/pip install --quiet --no-cache-dir \
-    imutils  \
-    pyfits \
-    seaborn  \
-    emcee  \
-    iminuit \
-    matplotlib \
+    'conda-forge::scikit-image=0.16.2' \
+    'conda-forge::scikit-learn=0.23.2' \
 #--------------------------------------------------------------------
-# Jupyter Lab
-    jupyterhub \
-    jupyterlab \
+  && /opt/conda/envs/tf1/bin/pip install --quiet --no-cache-dir \
+    'tensorflow-gpu==1.15.0' \
+    'keras==2.3.1'  \
+    'keras-preprocessing' \
+    'pyfits==3.5' \
+    'seaborn==0.10.1' \
+    'mpi4py==3.0.3' \
 #--------------------------------------------------------------------
   && conda clean --all -f -y \
   && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \

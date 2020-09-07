@@ -126,15 +126,15 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && rm -rf proto3 protoc-3.0.0-linux-x86_64.zip \
 #--------------------------------------------------------------------
   && wget --no-check-certificate https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz \
-    && tar xvzf openmpi-${OPENMPI_VERSION}.tar.gz \
-    && rm -rf openmpi-${OPENMPI_VERSION}.tar.gz \
-    && cd openmpi-${OPENMPI_VERSION} \
-    && CFLAGS=-O3 CXXFLAGS=-O3 ./configure --prefix=/usr \
-      --enable-orterun-prefix-by-default --enable-wrapper-rpath \
-    && make -j $MAKE_NUM_THREADS all \
-    && make install \
-    && cd ../ \
-    && rm -rf openmpi-${OPENMPI_VERSION} \
+  && tar xvzf openmpi-${OPENMPI_VERSION}.tar.gz \
+  && rm -rf openmpi-${OPENMPI_VERSION}.tar.gz \
+  && cd openmpi-${OPENMPI_VERSION} \
+  && CFLAGS=-O3 CXXFLAGS=-O3 ./configure --prefix=/usr \
+    --enable-orterun-prefix-by-default --enable-wrapper-rpath \
+  && make -j $MAKE_NUM_THREADS all \
+  && make install \
+  && cd ../ \
+  && rm -rf openmpi-${OPENMPI_VERSION} \
 #--------------------------------------------------------------------
   && git clone https://github.com/xianyi/OpenBLAS.git \
   && cd OpenBLAS \

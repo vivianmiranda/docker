@@ -11,6 +11,8 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update \
   && apt-get install -yq --fix-missing software-properties-common  \
     apt-utils build-essential \
+  && add-apt-repository ppa:ubuntu-toolchain-r/test \
+  && apt-get update \
   && apt-get install -yq --fix-missing --no-install-recommends gcc-7 \
     gfortran-7 g++-7 git autoconf dpkg git-lfs xz-utils pkg-config \
     python3.7-dev python3-pip python-pip python3.7-venv \
@@ -21,9 +23,9 @@ RUN apt-get update \
     sed libsqlite3-dev sudo locales fonts-dejavu libgoogle-glog-dev  \
     texlive-xetex texlive-fonts-recommended texlive-plain-generic libx264-dev \
     libtool automake zlib1g-dev libcurl4-gnutls-dev ca-certificates libssl-dev \
-    libtiff5-dev libpng-dev run-one ffmpeg \
-    #libprotobuf-dev protobuf-compiler  \
-    libjpeg-dev libtbb-dev dvipng libopenexr-dev libavcodec-dev libeigen3-dev \
+    libtiff5-dev libpng-dev run-one ffmpeg gcc-9 gfortran-9 g++-9 \
+    #libprotobuf-dev protobuf-compiler libopenexr-dev \
+    libjpeg-dev libtbb-dev dvipng libavcodec-dev libeigen3-dev \
     libjpeg8-dev libavformat-dev libswscale-dev ca-certificates-java \
     "openjdk-11-jre-headless" libatlas-base-dev libgtk-3-dev libxvidcore-dev \
 # ------------------------------------------------------------------------
@@ -32,14 +34,14 @@ RUN apt-get update \
   && locale-gen \
 # ------------------------------------------------------------------------
   && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.7 \
-  && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 9 \
-  && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 9 \
-  && update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-7 9 \
+  && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 9 \
+  && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 9 \
+  && update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-9 9 \
   && update-alternatives --install /usr/bin/python python /usr/bin/python3.7 1 \
   && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1 \
-  && update-alternatives --set gcc /usr/bin/gcc-7 \
-  && update-alternatives --set g++ /usr/bin/g++-7 \
-  && update-alternatives --set gfortran /usr/bin/gfortran-7 \
+  && update-alternatives --set gcc /usr/bin/gcc-9 \
+  && update-alternatives --set g++ /usr/bin/g++-9 \
+  && update-alternatives --set gfortran /usr/bin/gfortran-9 \
   && update-alternatives --set python /usr/bin/python3.7 \
   && update-alternatives --set python3 /usr/bin/python3.7 \
 # ------------------------------------------------------------------------
@@ -195,6 +197,44 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && cd ../ \
   && rm -rf armadillo-9.200.7/ \
 #--------------------------------------------------------------------
+  && wget https://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.gz \
+  && tar zxvf boost_1_74_0.tar.gz \
+  && rm boost_1_74_0.tar.gz \
+  && cd boost_1_74_0 \
+  && ./bootstrap.sh \
+  && ./b2  --with-regex --with-python install \
+  && cd ../ \
+  && rm -rf boost_1_74_0 \
+#--------------------------------------------------------------------
+  && ldconfig \
+#--------------------------------------------------------------------
+  && git clone git://github.com/AcademySoftwareFoundation/openexr.git \
+  && cd ./openexr \
+  && git checkout v2.5.2 \
+  && cmake . \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../ \
+  && rm -rf openexr/ \
+#--------------------------------------------------------------------
+  && git clone git://github.com/apache/xerces-c.git \
+  && cd ./xerces-c \
+  && git checkout v3.2.3 \
+  && cmake . \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../ \
+  && rm -rf ./xerces-c \
+#--------------------------------------------------------------------
+  && git clone git://github.com/libigl/eigen.git \
+  && mkdir eigein_build_dir \
+  && cd eigein_build_dir \
+  && cmake ../eigen \
+  && make install \
+  && cd ../ \
+  && rm -rf eigein_build_dir \
+  && rm -rf eigen \
+#--------------------------------------------------------------------
   && ldconfig \
 #--------------------------------------------------------------------
   && git clone git://github.com/opencv/opencv.git /opencv \
@@ -236,24 +276,6 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && ldconfig \
   && /usr/local/bin/fix-permissions $HOME \
 #--------------------------------------------------------------------
-  && git clone git://github.com/libigl/eigen.git \
-  && mkdir eigein_build_dir \
-  && cd eigein_build_dir \
-  && cmake ../eigen \
-  && make install \
-  && cd ../ \
-  && rm -rf eigein_build_dir \
-  && rm -rf eigen \
-#--------------------------------------------------------------------
-  && wget https://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.gz \
-  && tar zxvf boost_1_74_0.tar.gz \
-  && rm boost_1_74_0.tar.gz \
-  && cd boost_1_74_0 \
-  && ./bootstrap.sh \
-  && ./b2  --with-regex install \
-  && cd ../ \
-  && rm -rf boost_1_74_0 \
-#--------------------------------------------------------------------
 # INSTALL GOSU
   && dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')" \
   && curl -sSL "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-${dpkgArch}" > /usr/bin/gosu \
@@ -261,7 +283,7 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && gosu nobody true \
 #--------------------------------------------------------------------
 # INSTALL wait-for-it.sh
-  && curl -sSL https://github.com/vishnubob/wait-for-it/raw/master/wait-for-it.sh >/usr/bin/wait-for-it.sh \
+  && curl -sSL https://github.com/vishnubob/wait-for-it/raw/master/wait-for-it.sh > /usr/bin/wait-for-it.sh \
   && chmod 755 /usr/bin/wait-for-it.sh \
 #--------------------------------------------------------------------
   && ldconfig
