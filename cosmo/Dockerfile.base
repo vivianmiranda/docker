@@ -247,6 +247,6 @@ RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su \
     #&& sed -i.bak -e 's/^%admin/#%admin/' /etc/sudoers \
     #&& sed -i.bak -e 's/^%sudo/#%sudo/' /etc/sudoers \
     && useradd -m -s /bin/bash -N -u $NB_UID $NB_USER \
-    && groupmod -g 1000 users \
+    && groupmod -g $NB_GID users \
     && chmod g+w /etc/passwd \
     && /usr/local/bin/fix-permissions $HOME
