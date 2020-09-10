@@ -90,7 +90,7 @@ ENV CONDA_DIR=/opt/conda \
     HOME=/home/$NB_USER \
     CONDAV=4.8.3 \
     GOSU_VERSION=1.12 \
-    MAKE_NUM_THREADS=8
+    MAKE_NUM_THREADS=4
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -195,14 +195,15 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && make -j $MAKE_NUM_THREADS \
   && make install \
   && cd ../ \
-  && rm -rf armadillo-9.200.7/ \
+  && rm -rf armadillo-9.200.7/
 #--------------------------------------------------------------------
-  && wget https://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.gz \
+
+RUN wget https://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.gz \
   && tar zxvf boost_1_74_0.tar.gz \
   && rm boost_1_74_0.tar.gz \
   && cd boost_1_74_0 \
   && ./bootstrap.sh \
-  && ./b2  --with-regex --with-python install \
+  && ./b2  --with-regex install \
   && cd ../ \
   && rm -rf boost_1_74_0 \
 #--------------------------------------------------------------------
@@ -235,9 +236,10 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && rm -rf eigein_build_dir \
   && rm -rf eigen \
 #--------------------------------------------------------------------
-  && ldconfig \
+  && ldconfig
 #--------------------------------------------------------------------
-  && git clone git://github.com/opencv/opencv.git /opencv \
+
+RUN git clone git://github.com/opencv/opencv.git /opencv \
   && git clone git://github.com/opencv/opencv_contrib.git \
   && cd /opencv \
   && git checkout 4.4.0 \
