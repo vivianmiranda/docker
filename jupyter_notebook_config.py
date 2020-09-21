@@ -7,7 +7,7 @@ c.NotebookApp.ip = '*'
 c.NotebookApp.allow_remote_access = True
 # do not open a browser window by default when using notebooks
 c.NotebookApp.open_browser = False
-c.NotebookApp.notebook_dir = '/model'
+c.NotebookApp.notebook_dir = '/home/whovian/host'
 # Allow to run Jupyter from root user inside Docker container
 c.NotebookApp.allow_root = False
 c.NotebookApp.allow_origin = '*'
