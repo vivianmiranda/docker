@@ -19,6 +19,6 @@ c.NotebookApp.tornado_settings = {
     }
 }
 c.NotebookApp.max_buffer_size = 70000000000
-NotebookApp.iopub_data_rate_limit=10000000000
+c.NotebookApp.iopub_data_rate_limit=10000000000
 c.NotebookApp.shutdown_no_activity_timeout = 0
 c.NotebookApp.webbrowser_open_new = 2
