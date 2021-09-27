@@ -204,14 +204,16 @@ RUN git clone git://github.com/Kitware/CMake.git \
 #--------------------------------------------------------------------
   && git clone git://github.com/gabime/spdlog.git \
   && cd ./spdlog \
-  && git checkout v1.7.0  \
+  && git checkout v1.9.2   \
   && cmake --log-level=ERROR . \
   && make -j $MAKE_NUM_THREADS all -Wno-dev \
   && make install \
   && cd ../ \
   && rm -rf ./spdlog \
 #--------------------------------------------------------------------
-  && git clone git://github.com/libigl/eigen.git \
+  && wget -q https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz \
+  && tar zxvf eigen-3.4.0.tar.gz \
+  && mv eigen-3.4.0 eigen
   && mkdir eigein_build_dir \
   && cd eigein_build_dir \
   && cmake ../eigen \
