@@ -185,15 +185,15 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && cd ../ \
   && rm -rf cfitsio-3.49/ \
 #--------------------------------------------------------------------
-  && wget -q https://sourceforge.net/projects/arma/files/armadillo-9.200.7.tar.xz \
-  && tar xvf armadillo-9.200.7.tar.xz \
-  && rm -f armadillo-9.200.7.tar.xz \
-  && cd armadillo-9.200.7/ \
+  && wget -q -O armadillo-10.6.1.tar.xz 'https://sourceforge.net/projects/arma/files/armadillo-10.6.1.tar.xz/download' \
+  && tar xvf armadillo-10.6.1.tar.xz \
+  && rm -f armadillo-10.6.1.tar.xz \
+  && cd armadillo-10.6.1/ \
   && cmake -DBUILD_SHARED_LIBS=TRUE --log-level=ERROR . \
   && make -j $MAKE_NUM_THREADS \
   && make install \
   && cd ../ \
-  && rm -rf armadillo-9.200.7/ \
+  && rm -rf armadillo-10.6.1/ \
 #--------------------------------------------------------------------
   && git clone --depth 1 --branch v0.6.1 git://github.com/RUrlus/carma.git \
   && cd ./carma \
