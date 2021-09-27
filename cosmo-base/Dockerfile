@@ -195,11 +195,12 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && cd ../ \
   && rm -rf armadillo-9.200.7/ \
 #--------------------------------------------------------------------
-  && git clone git://github.com/RUrlus/carma.git \
+  && git clone --depth 1 --branch v0.6.1 git://github.com/RUrlus/carma.git \
   && cd ./carma \
-  && cp -r ./include/carma/ /usr/local/carma \
+  && cp -r ./include/ /usr/local/carma \
   && cd ../ \
   && rm -rf carma/ \
+  && mv /usr/local/carma/carma /usr/local/carma/carma.h \
 #--------------------------------------------------------------------
   && git clone git://github.com/gabime/spdlog.git \
   && cd ./spdlog \
