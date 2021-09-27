@@ -219,14 +219,14 @@ RUN git clone git://github.com/Kitware/CMake.git \
   && rm -rf eigein_build_dir \
   && rm -rf eigen \
 #--------------------------------------------------------------------
-  && wget https://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.gz \
-  && tar zxvf boost_1_74_0.tar.gz \
-  && rm boost_1_74_0.tar.gz \
-  && cd boost_1_74_0 \
+  && wget https://boostorg.jfrog.io/artifactory/main/release/1.77.0/source/boost_1_77_0.tar.gz \
+  && tar zxvf boost_1_77_0.tar.gz \
+  && rm boost_1_77_0.tar.gz \
+  && cd boost_1_77_0 \
   && ./bootstrap.sh \
   && ./b2  --with-regex install \
   && cd ../ \
-  && rm -rf boost_1_74_0 \
+  && rm -rf boost_1_77_0 \
 #--------------------------------------------------------------------
 # INSTALL GOSU
   && dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')" \
