@@ -7,10 +7,10 @@ FROM vivianmiranda/docker-cosmo-base
 RUN pip install --upgrade --no-cache-dir pip setuptools wheel \
     pip install --no-cache-dir \
     'python-config' \
-    'numpy==1.19.1' \
+    'numpy==1.21.1' \
     'python-dateutil==2.8.1' \
     'six==1.15.0' \
-    'cython==0.29.21' \
+    'cython==0.29.24' \
     'protobuf==3.13.0' \
     'nodejs' \
     'kiwisolver==1.2.0' \
@@ -21,23 +21,22 @@ RUN pip install --upgrade --no-cache-dir pip setuptools wheel \
     'virtualenv==20.0.20' \
     'imageio==2.9.0' \
     'notebook==6.1.1' \
-    'scipy==1.5.2' \
+    'scipy==1.6.3' \
     'pandas==1.1.1' \
     'h5py==2.10.0' \
-    'astropy==4.0.1.post1' \
-    'pybind11==2.5.0' \
+    'astropy==4.3.1' \
+    'pybind11==2.7.1' \
     'tokenizers==0.8.1' \
     'numba==0.50.1' \
-    'GetDist==1.1.2' \
+    'GetDist==1.3.2' \
     'requests==2.24.0' \
   && pip install --no-cache-dir \
-    'pyfits==3.5' \
     'seaborn==0.10.1' \
-    'emcee==3.0.2' \
-    'iminuit==1.4.9' \
-    'py-bobyqa==1.2' \
+    'emcee==3.1.1' \
+    'iminuit==2.8.2' \
+    'py-bobyqa==1.3' \
     'wget==3.2' \
-    'matplotlib==3.3.1' \
+    'matplotlib==3.4.3' \
     'mpi4py==3.0.3' \
   && /usr/local/bin/fix-permissions $HOME
 
