@@ -209,7 +209,7 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.74.0/source/boost_
 #--------------------------------------------------------------------
   && ldconfig \
 #--------------------------------------------------------------------
-  && git clone git://github.com/AcademySoftwareFoundation/openexr.git \
+  && git clone https://github.com/AcademySoftwareFoundation/openexr.git \
   && cd ./openexr \
   && git checkout v2.5.2 \
   && cmake . \
@@ -218,7 +218,7 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.74.0/source/boost_
   && cd ../ \
   && rm -rf openexr/ \
 #--------------------------------------------------------------------
-  && git clone git://github.com/apache/xerces-c.git \
+  && git clone https://github.com/apache/xerces-c.git \
   && cd ./xerces-c \
   && git checkout v3.2.3 \
   && cmake . \
@@ -227,7 +227,7 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.74.0/source/boost_
   && cd ../ \
   && rm -rf ./xerces-c \
 #--------------------------------------------------------------------
-  && git clone git://github.com/libigl/eigen.git \
+  && git clone https://github.com/libigl/eigen.git \
   && mkdir eigein_build_dir \
   && cd eigein_build_dir \
   && cmake ../eigen \
