@@ -1,8 +1,7 @@
 FROM vivianmiranda/whovian-base-base
 
-RUN git clone git://github.com/opencv/opencv.git /opencv \
-  && git clone git://github.com/opencv/opencv_contrib.git \
-  && cd /opencv \
+RUN git clone https://github.com/opencv/opencv.git \
+  && cd ./opencv \
   && git checkout 4.4.0 \
   && mkdir ./build \
   && cd ./build \
