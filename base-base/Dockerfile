@@ -187,15 +187,15 @@ RUN git clone  https://github.com/Kitware/CMake.git \
   && cd ../ \
   && rm -rf cfitsio-3.49/ \
 #--------------------------------------------------------------------
-  && wget -q https://sourceforge.net/projects/arma/files/armadillo-9.200.7.tar.xz \
-  && tar xvf armadillo-9.200.7.tar.xz \
-  && rm -f armadillo-9.200.7.tar.xz \
-  && cd armadillo-9.200.7/ \
+  && wget -q https://sourceforge.net/projects/arma/files/armadillo-11.0.1.tar.xz \
+  && tar xvf  armadillo-11.0.1.tar.xz\
+  && rm -f armadillo-11.0.1.tar.xz \
+  && cd armadillo-11.0.1/ \
   && cmake -DBUILD_SHARED_LIBS=TRUE --log-level=ERROR . \
   && make -j $MAKE_NUM_THREADS \
   && make install \
   && cd ../ \
-  && rm -rf armadillo-9.200.7/
+  && rm -rf armadillo-11.0.1/
 #--------------------------------------------------------------------
 
 RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.74.0/source/boost_1_74_0.tar.gz \
