@@ -112,7 +112,7 @@ RUN chmod a+rx /usr/local/bin/fix-permissions \
 
 ENV OPENMPI_VERSION=4.0.5
 
-RUN git clone git://github.com/Kitware/CMake.git \
+RUN git clone  https://github.com/Kitware/CMake.git \
   && cd ./CMake \
   && git checkout v3.16.0 \
   && ./bootstrap \
