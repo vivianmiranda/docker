@@ -35,7 +35,6 @@ RUN git clone https://github.com/opencv/opencv.git \
   && make install \
   && cd ../../ \
   && rm -rf /opencv \
-  && rm -rf /opencv_contrib \
   && ldconfig \
   && /usr/local/bin/fix-permissions $HOME \
 #--------------------------------------------------------------------
