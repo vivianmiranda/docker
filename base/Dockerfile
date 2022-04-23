@@ -5,8 +5,9 @@ RUN git clone https://github.com/opencv/opencv.git \
   && git checkout 4.4.0 \
   && mkdir ./build \
   && cd ./build \
+  && git clone https://github.com/opencv/opencv_contrib.git \
   && cmake -DCMAKE_BUILD_TYPE=RELEASE \
-     -DOPENCV_EXTRA_MODULES_PATH=/opencv_contrib/modules \
+     -DOPENCV_EXTRA_MODULES_PATH=./opencv_contrib/modules \
      -DPYTHON_EXECUTABLE=/usr/bin/python3.7/ \
      -DOPENCV_ENABLE_NONFREE=ON \
      -DBUILD_TIFF=OFF \
