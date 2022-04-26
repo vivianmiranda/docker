@@ -30,9 +30,9 @@ RUN conda create --name tf2 python=3.8 --quiet --yes \
 #--------------------------------------------------------------------
   && /opt/conda/envs/tf2/bin/pip install --quiet --no-cache-dir \
     'tensorflow-gpu==2.8.0' \
-    'keras==2.4.3' \
-    'keras-preprocessing==1.1.0' \
-    'pyfits==3.5' \
+    'keras==2.8.0' \
+    'keras-preprocessing' \
+    'astropy==5.0.4' \
     'seaborn==0.10.1'  \
     'mpi4py==3.0.3' \
 #--------------------------------------------------------------------
