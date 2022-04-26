@@ -27,6 +27,7 @@ RUN conda create --name tf2 python=3.8 --quiet --yes \
     'conda-forge::h5py=2.10.0' \
     'conda-forge::scikit-image=0.19.2' \
     'conda-forge::scikit-learn=1.0.2' \
+  && /opt/conda/envs/tf2/bin/pip install --quiet --no-cache-dir --upgrade importlib-metadata \
 #--------------------------------------------------------------------
   && /opt/conda/envs/tf2/bin/pip install --quiet --no-cache-dir \
     'tensorflow-gpu==2.8.0' \
