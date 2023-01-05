@@ -77,7 +77,7 @@ ENV PKG-CFG=/usr/bin/pkg-config
 RUN git clone git://github.com/pjreddie/darknet.git \
   && mv ./darknet/ /opt/conda/envs/pytorch/ \
   && cd /opt/conda/envs/pytorch/darknet \
-  && git checkout 4a03d405982aa1e1e911eac42b0ffce29cc8c8ef
+  && git checkout f6afaabcdf85f77e7aff2ec55c020c0e297c77f9
 COPY darknet/Makefile ./
 RUN cd /opt/conda/envs/pytorch/darknet \
   && make -j $MAKE_NUM_THREADS \

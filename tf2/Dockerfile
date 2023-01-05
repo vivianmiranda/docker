@@ -12,12 +12,8 @@ ENV OLDPATH=$PATH \
 
 RUN conda create --name tf2 python=3.8 --quiet --yes \
   && conda install -n tf2 --quiet --yes \
-    'conda-forge::libgcc-ng=11.2.0' \
-    'conda-forge::libstdcxx-ng=11.2.0' \
-    'conda-forge::gcc_linux-64=11.2.0' \
-    'conda-forge::gxx_linux-64=11.2.0' \
-    'conda-forge::numpy=1.19.1' \
-    'conda-forge::cython=0.29.21' \
+    'conda-forge::numpy=1.21.4' \
+    'conda-forge::cython=0.29.24' \
     'conda-forge::matplotlib=3.3.1' \
     'conda-forge::imutils=0.5.3' \
     'conda-forge::numba=0.50.1' \
@@ -30,10 +26,10 @@ RUN conda create --name tf2 python=3.8 --quiet --yes \
   && /opt/conda/envs/tf2/bin/pip install --quiet --no-cache-dir --upgrade importlib-metadata \
 #--------------------------------------------------------------------
   && /opt/conda/envs/tf2/bin/pip install --quiet --no-cache-dir \
-    'tensorflow-gpu==2.8.0' \
-    'keras==2.8.0' \
+    'tensorflow-gpu==2.11.0' \
+    'keras==2.11.0' \
     'keras-preprocessing' \
-    'astropy==5.0.4' \
+    'astropy==5.2' \
     'seaborn==0.10.1'  \
     'mpi4py==3.0.3' \
 #--------------------------------------------------------------------
@@ -50,7 +46,7 @@ ENV PKG-CFG=/usr/bin/pkg-config
 RUN git clone https://github.com/pjreddie/darknet.git \
   && mv ./darknet/ /opt/conda/envs/tf2/ \
   && cd /opt/conda/envs/tf2/darknet \
-  && git checkout b1ab3da442574364f82c09313a58f7fc93cea2bd
+  && git checkout f6afaabcdf85f77e7aff2ec55c020c0e297c77f9
 COPY darknet/Makefile ./
 RUN cd /opt/conda/envs/tf2/darknet \
   && make -j $MAKE_NUM_THREADS \
