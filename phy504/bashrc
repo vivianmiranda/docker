@@ -21,17 +21,23 @@ alias ls="ls --color=auto"
 echo -e "\e[1;31m"
 cat<<TF
 
-*********************************************************************
-*                                                                   *
-* This system is for the use of authorized users only.  Usage of    *
-* this system may be monitored and recorded by system personnel.    *
-*                                                                   *
-* Anyone using this system expressly consents to such monitoring    *
-* and is advised that if such monitoring reveals possible           *
-* evidence of criminal activity, system personnel may provide the   *
-* evidence from such monitoring to law enforcement officials.       *
-*                                                                   *
-*********************************************************************
+**********************************************************************
+*                                                                    *
+* Welcome to Docker Whovian-PHY504 docker image. I hope this VM      *
+* will help you learn shell, C/C++/Fortran, and Python               *
+*                                                                    *
+* Homework for PHY504 must compile in the University machines, but I *
+* understand that running what we will learn on your laptop can help *
+* you set up your research software. You can also do your HW offline *
+* (ex: I take the train every day between Stony Brook and Queens),   *
+* and then check if HW compiles on the lab machine afterward         *
+*                                                                    *
+* This image also contains multiple gcc compilers (gcc 9 / 10 / 11)  *
+* They contain new features about Fortran 2008 / C++17. Have fun!    *
+*                                                                    *   
+* PS: Files saved outside ~/host are deleted upon exiting the VM     *
+*                                                                    *
+**********************************************************************
 
 TF
 echo -e "\e[0;33m"
