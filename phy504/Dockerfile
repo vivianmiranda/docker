@@ -1,4 +1,7 @@
-FROM vivianmiranda/whovian-base:v3.0
+FROM vivianmiranda/whovian-base:v4.0
+
+#RUN  apt-get update \
+#  && apt install -yq --fix-missing emacs sed vim man-db manpages-posix
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -43,6 +46,63 @@ RUN pip install --upgrade --no-cache-dir pip setuptools wheel \
     'torch' \
     'torchvision' \
   && /usr/local/bin/fix-permissions $HOME
+
+
+# FMT formmating library C++20 (https://github.com/fmtlib/fmt)
+RUN git clone https://github.com/fmtlib/fmt.git \ 
+  && cd ./fmt \
+  && git checkout 9.1.0 \
+  && mkdir  build \
+  && cd build \
+  && cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. \
+  && make all \
+  && make install \
+  && cd ../../ \
+  && rm -rf ./fmt
+
+# spdlog
+RUN git clone https://github.com/vivianmiranda/spdlog.git \
+  && cd spdlog \
+  && cd ../ \
+  && cd spdlog \
+  && mkdir  build \
+  && cd build \
+  && cmake \ 
+    -DSPDLOG_NO_EXCEPTIONS=yes \
+    -DCMAKE_INSTALL_PREFIX=/usr/local .. \
+  && make all \
+  && make install \ 
+  && cd ../../ \
+  && rm -rf ./spdlog
+
+# gcc 13 install
+RUN wget --content-disposition https://kayari.org/gcc-latest/gcc-latest.deb \
+  &&  apt install ./gcc-latest_13.0.1-20230402git8f989fe879dd.deb \ 
+  &&  rm -rf gcc-latest_13.0.1-20230402git8f989fe879dd.deb
+
+#
+RUN git clone https://github.com/kokkos/mdspan \
+    && cd ./mdspan \
+    && mkdir  build \
+    && cd build  \
+    && cmake \
+    -DMDSPAN_ENABLE_TESTS=OFF \
+    -DMDSPAN_ENABLE_BENCHMARKS=OFF \
+    -DCMAKE_CXX_FLAGS="-Werror -Wall -Wextra -pedantic" \
+    -DCMAKE_CXX_STANDARD=20 -DMDSPAN_CXX_STANDARD=20 \
+    -DCMAKE_CXX_COMPILER=g++ \
+    -DCMAKE_CXX_EXTENSIONS=OFF \
+    -DCMAKE_INSTALL_PREFIX=/usr/local .. \
+    && cd ../../ 
+
+RUN    cp /mdspan/include/experimental/mdarray /usr/local/include/ \
+    && cp /mdspan/include/experimental/mdspan /usr/local/include/ \
+    && cp -r /mdspan/include/experimental/__p0009_bits /usr/local/include/ \
+    && cp -r /mdspan/include/experimental/__p1684_bits /usr/local/include/ \
+    && cp -r /mdspan/include/experimental/__p2630_bits /usr/local/include/ \
+    && rm -rf /mdspan/
+    
+RUN rm -rf /var/lib/apt/lists/*
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------

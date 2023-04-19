@@ -1,5 +1,5 @@
-FROM vivianmiranda/whovian-base-base:v3.0
-
+#FROM vivianmiranda/whovian-base-base:v3.0
+FROM vivianmiranda/whovian-base-base:v4.0
 #--------------------------------------------------------------------
 # Install OpenCV 
 #--------------------------------------------------------------------
@@ -82,7 +82,7 @@ RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su \
 #--------------------------------------------------------------------
 # INSTALL CONDA
 
-ENV CONDAV=4.11.0
+ENV CONDAV=4.12.0
 
 RUN wget --quiet \
 https://repo.continuum.io/miniconda/Miniconda3-py38_${CONDAV}-Linux-x86_64.sh \
