@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.0.1-cudnn8-devel-ubuntu22.04
+FROM ubuntu:22.04
 
 ARG NB_USER="whovian"
 ARG NB_UID=1000
@@ -19,26 +19,15 @@ RUN apt-get update \
   && apt-get install -yq --fix-missing --no-install-recommends libgflags-dev \
     libhdf5-dev libarpack2-dev nano make wget curl \
     libgtk2.0-dev libglib2.0-0 libfreetype6-dev libleveldb-dev \
-    sqlite3 libv4l-dev fonts-liberation tzdata unzip grep libsnappy-dev \
+    sqlite3 libv4l-dev tzdata unzip grep libsnappy-dev \
     sed libsqlite3-dev sudo locales fonts-dejavu libgoogle-glog-dev  libx264-dev \
-#   texlive-xetex texlive-fonts-recommended texlive-plain-generic \
-    libtool automake zlib1g-dev libcurl4-gnutls-dev ca-certificates libssl-dev \
-    libtiff5-dev libpng-dev run-one ffmpeg emacs vim  \
-#   gcc-12 gfortran-12 g++-12 \
-    libjpeg-dev libtbb-dev dvipng libavcodec-dev libeigen3-dev \
-    libjpeg8-dev libavformat-dev libswscale-dev ca-certificates-java \
+    libtool automake zlib1g-dev libcurl4-gnutls-dev libssl-dev \
+    libtiff5-dev run-one emacs vim gfortran gcc g++ libtbb-dev libeigen3-dev libswscale-dev \
     "openjdk-11-jre-headless" libatlas-base-dev libgtk-3-dev libxvidcore-dev \
 # ------------------------------------------------------------------------
   && ln -s /bin/tar /bin/gtar \
   && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
   && locale-gen \
-# ------------------------------------------------------------------------
-#  && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 12 \
-#  && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 12 \
-#  && update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-12 12 \
-#  && update-alternatives --set gcc /usr/bin/gcc-12 \
-#  && update-alternatives --set g++ /usr/bin/g++-12 \
-#  && update-alternatives --set gfortran /usr/bin/gfortran-12 \
 # ------------------------------------------------------------------------
   && python3 -m pip install pip --upgrade --quiet --no-cache-dir \
   && pip3 install numpy==1.24.0 --quiet --no-cache-dir \
@@ -102,7 +91,7 @@ RUN chmod a+rx /usr/local/bin/fix-permissions \
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# INSTALL CORE RESEARCH LIBRARIES FROM SOURCE
+# INSTALL CORE RESEARCH LIBRARIES FROM SOURCE (For native Cosmolike)
 
 # --------------------------------------------------------------------------
 RUN git clone  https://github.com/Kitware/CMake.git \
@@ -112,15 +101,15 @@ RUN git clone  https://github.com/Kitware/CMake.git \
   && make -j $MAKE_NUM_THREADS \
   && make install \
   && cd ../ \
-  && rm -rf CMake \
+  && rm -rf CMake 
 # --------------------------------------------------------------------------
-  && curl -OL "https://github.com/google/protobuf/releases/download/v3.0.0/protoc-3.0.0-linux-x86_64.zip" \
+RUN curl -OL "https://github.com/google/protobuf/releases/download/v3.0.0/protoc-3.0.0-linux-x86_64.zip" \
   && unzip protoc-3.0.0-linux-x86_64.zip -d proto3 \
   && mv proto3/bin/* /usr/local/bin \
   && mv proto3/include/* /usr/local/include \
-  && rm -rf proto3 protoc-3.0.0-linux-x86_64.zip \
+  && rm -rf proto3 protoc-3.0.0-linux-x86_64.zip 
 # --------------------------------------------------------------------------
-  && wget --no-check-certificate https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz \
+RUN wget --no-check-certificate https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz \
   && tar xvzf openmpi-${OPENMPI_VERSION}.tar.gz \
   && rm -rf openmpi-${OPENMPI_VERSION}.tar.gz \
   && cd openmpi-${OPENMPI_VERSION} \
@@ -129,17 +118,17 @@ RUN git clone  https://github.com/Kitware/CMake.git \
   && make -j $MAKE_NUM_THREADS all \
   && make install \
   && cd ../ \
-  && rm -rf openmpi-${OPENMPI_VERSION} \
+  && rm -rf openmpi-${OPENMPI_VERSION} 
 # --------------------------------------------------------------------------
-  && git clone https://github.com/xianyi/OpenBLAS.git \
+RUN git clone https://github.com/xianyi/OpenBLAS.git \
   && cd OpenBLAS \
   && git checkout v0.3.21 \
   && make -j $MAKE_NUM_THREADS USE_OPENMP=1 all \
   && make install PREFIX=/usr/local \
   && cd ../ \
-  && rm -rf OpenBLAS/ \
+  && rm -rf OpenBLAS/ 
 # --------------------------------------------------------------------------
-  && git clone https://github.com/Reference-LAPACK/lapack lapack \
+RUN git clone https://github.com/Reference-LAPACK/lapack lapack \
   && cd lapack \
   && git checkout v3.11.0 \
   && mkdir build \
@@ -148,9 +137,9 @@ RUN git clone  https://github.com/Kitware/CMake.git \
   && make -j $MAKE_NUM_THREADS all \
   && make install \
   && cd ../../ \
-  && rm -rf lapack-3.11.0/ \
+  && rm -rf lapack-3.11.0/ 
 # --------------------------------------------------------------------------
-  && wget -q http://ftp.wayne.edu/gnu/gsl/gsl-2.7.tar.gz \
+RUN wget -q http://ftp.wayne.edu/gnu/gsl/gsl-2.7.tar.gz \
   && tar zxvf gsl-2.7.tar.gz \
   && rm -f gsl-2.7.tar.gz \
   && cd gsl-2.7 \
@@ -158,9 +147,9 @@ RUN git clone  https://github.com/Kitware/CMake.git \
   && make -j $MAKE_NUM_THREADS \
   && make install \
   && cd ../ \
-  && rm -rf gsl-2.7/ \
+  && rm -rf gsl-2.7/ 
 # --------------------------------------------------------------------------
-  && wget -q http://www.fftw.org/fftw-3.3.10.tar.gz \
+RUN wget -q http://www.fftw.org/fftw-3.3.10.tar.gz \
   && tar zxvf fftw-3.3.10.tar.gz \
   && rm -f fftw-3.3.10.tar.gz \
   && cd fftw-3.3.10/ \
@@ -168,9 +157,9 @@ RUN git clone  https://github.com/Kitware/CMake.git \
   && make -j $MAKE_NUM_THREADS \
   && make install \
   && cd ../ \
-  && rm -rf fftw-3.3.10/ \
+  && rm -rf fftw-3.3.10/ 
 # --------------------------------------------------------------------------
-  && wget -q http://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio-4.2.0.tar.gz \
+RUN wget -q http://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio-4.2.0.tar.gz \
   && tar zxvf cfitsio-4.2.0.tar.gz \
   && rm -f cfitsio-4.2.0.tar.gz \
   && cd cfitsio-4.2.0/ \
@@ -179,59 +168,12 @@ RUN git clone  https://github.com/Kitware/CMake.git \
   && cmake -DBUILD_SHARED_LIBS=TRUE --log-level=ERROR .. \
   && make -j $MAKE_NUM_THREADS \
   && make install \
-  && cd ../ \
+  && cd ../../ \
   && rm -rf cfitsio-4.2.0/ \
-  && ldconfig \
-# --------------------------------------------------------------------------
-#  && wget -q https://sourceforge.net/projects/arma/files/armadillo-12.0.1.tar.xz \
-#  && tar xvf armadillo-12.0.1.tar.xz\
-#  && rm -f armadillo-12.0.1.tar.xz \
-#  && cd armadillo-12.0.1/ \
-#  && cmake -DBUILD_SHARED_LIBS=TRUE --log-level=ERROR . \
-#  && make -j $MAKE_NUM_THREADS \
-#  && make install \
-#  && cd ../ \
-#  && rm -rf armadillo-12.0.1/ \
-#  && ldconfig \
-# --------------------------------------------------------------------------
-#  && wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz \
-#  && tar zxvf boost_1_81_0.tar.gz \
-#  && rm boost_1_81_0.tar.gz \
-#  && cd boost_1_81_0 \
-#  && ./bootstrap.sh \
-#  && ./b2  --with-regex install \
-#  && cd ../ \
-#  && rm -rf boost_1_81_0 \
-#  && ldconfig \
-# --------------------------------------------------------------------------
-#  && git clone https://github.com/fmtlib/fmt.git \ 
-#  && cd ./fmt \
-#  && git checkout 9.1.0 \
-#  && mkdir  build \
-#  && cd build \
-#  && cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. \
-#  && make all \
-#  && make install \
-#  && cd ../../ \
-#  && rm -rf ./fmt \
-# -------------------------------------------------------------------------- 
-#  && git clone https://github.com/vivianmiranda/spdlog.git \
-#  && cd spdlog \
-#  && cd ../ \
-#  && cd spdlog \
-#  && mkdir  build \
-#  && cd build \
-#  && cmake \ 
-#    -DSPDLOG_NO_EXCEPTIONS=yes \
-#    -DCMAKE_INSTALL_PREFIX=/usr/local .. \
-#  && make all \
-#  && make install \ 
-#  && cd ../../ \
-#  && rm -rf ./spdlog \
-#  && ldconfig \
+  && ldconfig 
 # --------------------------------------------------------------------------
 # INSTALL GOSU
-  && dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')" \
+RUN dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')" \
   && curl -sSL "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-${dpkgArch}" > /usr/bin/gosu \
   && chmod 755 /usr/bin/gosu \
   && gosu nobody true \
@@ -240,7 +182,7 @@ RUN git clone  https://github.com/Kitware/CMake.git \
   && curl -sSL https://github.com/vishnubob/wait-for-it/raw/master/wait-for-it.sh > /usr/bin/wait-for-it.sh \
   && chmod 755 /usr/bin/wait-for-it.sh \
 # --------------------------------------------------------------------------
-  && ldconfig 
+  && ldconfig
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -269,7 +211,9 @@ https://repo.continuum.io/miniconda/Miniconda3-py38_${CONDAV}-Linux-x86_64.sh \
   && $CONDA_DIR/bin/conda config --system --prepend channels conda-forge \
   && $CONDA_DIR/bin/conda config --system --set channel_priority strict \
   && $CONDA_DIR/bin/conda clean --all -f -y \
-  && find $CONDA_DIR -follow -type f -name '*.pyc' -delete
+  && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR
 ENV PATH=$CONDA_DIR/bin:$PATH
 
 # --------------------------------------------------------------------------
@@ -304,38 +248,39 @@ RUN conda create --name cocoa python=3.7 --quiet --yes \
   'conda-forge::scipy=1.7.2' \
   'conda-forge::pandas=1.3.4' \
   'conda-forge::mpi4py=3.1.2' \
-  'conda-forge::matplotlib=3.6.2' \
+  'conda-forge::matplotlib=3.5.0' \
   'conda-forge::astropy=4.3.1' \
-  && /opt/conda/envs/cocoa/bin/pip install --disable-pip-version-check --no-cache-dir \
-    'iminuit==2.8.2' \
-    'tensorflow-gpu==2.11.0' \
-    'keras==2.11.0' \
-    'keras-preprocessing' \
-    'torch' \
-    'torchvision' \
-#--------------------------------------------------------------------
+  && conda run -n cocoa /opt/conda/envs/cocoa/bin/pip install --no-cache-dir --root-user-action=ignore \
+    'tensorflow-cpu==2.8.0' \
+    'keras==2.8.0' \
+    'keras-preprocessing==1.1.2' \
+    'torch==1.11.0+cpu' \ 
+    'torchvision==0.12.0+cpu' -f https://download.pytorch.org/whl/torch_stable.html \
   && conda clean --all -f -y \
-  && find $CONDA_DIR -follow -type f -name '*.pyc' -delete 
-
+  && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
+  && rm -rf /opt/conda/share/man/* \
+  && rm -rf /opt/conda/envs/cocoa/man/* \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR
 # --------------------------------------------------------------------------
-# Initial Setup of Cocoa (slow: need to unpack files)
-RUN conda init bash \
-  && source ~/.bashrc \
-  && conda activate cocoa \
-  && $CONDA_PREFIX/bin/git-lfs install \
-  && $CONDA_PREFIX/bin/git-lfs clone https://github.com/CosmoLike/cocoa.git \
-  && cd ./cocoa/Cocoa \
-  && source setup_cocoa_installation_packages \
-  && source compile_external_modules \
-  && conda deactivate
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# cocoa
+RUN cd ~/ \
+    && conda run -n cocoa --no-capture-output $CONDA_PREFIX/bin/git-lfs install \
+    && conda run -n cocoa --no-capture-output $CONDA_PREFIX/bin/git-lfs clone https://github.com/CosmoLike/cocoa.git \
+    && /usr/local/bin/fix-permissions $HOME/cocoa 
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Native Cosmolike
-RUN git clone https://github.com/CosmoLike/cosmolike_core.git
-
+RUN mkdir ~/cosmolike \
+    && cd ~/cosmolike \
+    && git clone https://github.com/CosmoLike/cosmolike_core.git \
+    && /usr/local/bin/fix-permissions $HOME/cosmolike 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -358,5 +303,4 @@ USER $NB_UID
 WORKDIR $HOME
 VOLUME ["$HOME/host/"]
 
-RUN /usr/local/bin/fix-permissions $HOME \ 
-    && /usr/local/bin/fix-permissions $CONDA_DIR
+RUN /usr/local/bin/fix-permissions $HOME 
