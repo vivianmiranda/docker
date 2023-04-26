@@ -1,0 +1,70 @@
+# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# ==============================================================================
+
+export TERM=xterm-256color
+alias grep="grep --color=auto"
+alias ls="ls --color=auto"
+
+echo -e "\e[1;31m"
+cat<<TF
+
+**************************************************************************
+*                                                                        *
+* Welcome to Docker BigDataCosmo!                                        *
+*                                                                        *
+* PS: The command "docker run ... image" you initially typed created     *
+*     a docker container from the bdc2022 docker image                   *
+*                                                                        *
+* PS2: Files saved on ~/host are saved on the host computer (safer)      *
+*      as long as you included the command line option "-v               *
+*      \$(pwd):/home/whovian/host/" when calling the container            *
+*                                                                        *
+* PS3: Files saved outside ~/host are not lost if you don't delete       *
+*      the container. Containers and images are different things!        *
+*      Analogy: container -> person, image -> species (Human)            *
+*                                                                        *
+* PS4: How to restart a container? The command "docker ps -a" shows      *
+*      previously created containers. Get the Container ID and type      *
+*      the command "docker start -ai containerid"                        *
+*                                                                        *
+* PS5: When you run a container for the first time, you need to type     *
+       "conda init bash" followed by "source ~/.bashrc" before           *
+       activating the cocoa environment via "conda activate cocoa"       *
+**************************************************************************
+
+TF
+echo -e "\e[0;33m"
+
+if [[ $EUID -eq 0 ]]; then
+  cat <<WARN
+WARNING: You are running this container as root, which can cause new files in
+mounted volumes to be created as the root user on your host machine.
+
+To avoid this, run the container by specifying your user's userid:
+
+$ docker run -u \$(id -u):\$(id -g) args...
+WARN
+else
+  cat <<EXPL
+You are running this container as user with ID $(id -u) and group $(id -g),
+which should map to the ID and group for your user on the Docker host. Great!
+EXPL
+fi
+
+# Turn off colors
+echo -e "\e[m"
+
+
