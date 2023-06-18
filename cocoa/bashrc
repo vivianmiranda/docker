@@ -23,14 +23,14 @@ cat<<TF
 
 **************************************************************************
 *                                                                        *
-* Welcome to Docker BigDataCosmo!                                        *
+* Welcome to Docker Cocoa!                                               *
 *                                                                        *
 * PS: The command "docker run --platform linux/amd64 --hostname bdc      *
 *     -it -p 8080:8888 -v \$(pwd):/home/whovian/host/ -v                  *
-*     ~/.ssh:/home/whovian/.ssh:ro --name bdc2022 vivianmiranda/bdc2022" *
-*     you initially typed created a docker container named bdc2022 from  *
-*     the docker image vivianmiranda/bdc2022. Containers and images are  *
-*     different things! Analogy: container: person, image: Human         *
+*     ~/.ssh:/home/whovian/.ssh:ro --name cocoa2023                      *
+*     vivianmiranda/whovian-cocoa" you initially typed created a docker  *
+*     container named cocoa2023 from the docker image                    *
+*     vivianmiranda/bdc2022. Containers and images are different things! *
 *                                                                        *
 * PS2: Files located on ~/host are saved on the host computer (safer)    *
 *                                                                        *
@@ -38,12 +38,12 @@ cat<<TF
 *                                                                        *
 * PS4: How to restart our container? Type "docker start -ai bdc2022"     *
 *                                                                        *
-* PS5: When running the bdc2022 container for the first time, you must   *
+* PS5: When running the cocoa2023 container for the first time, you must *
 *      to type "conda init bash" followed by "source ~/.bashrc" before   *
 *      activating the cocoa environment via "conda activate cocoa"       *
 *                                                                        *
 * PS6: How to delete the container and lose all work and data that were  *
-*      not copied to the host computer? Type "docker rm -f bdc2022"      *
+*      not copied to the host computer? Type "docker rm -f cocoa2023"    *
 **************************************************************************
 
 TF
