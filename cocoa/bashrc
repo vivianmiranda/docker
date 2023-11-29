@@ -36,7 +36,7 @@ cat<<TF
 *                                                                        *
 * PS3: Files outside ~/host are lost if you delete the container         *
 *                                                                        *
-* PS4: How to restart our container? Type "docker start -ai bdc2022"     *
+* PS4: How to restart our container? Type "docker start -ai cocoa2023"     *
 *                                                                        *
 * PS5: When running the cocoa2023 container for the first time, you must *
 *      to type "conda init bash" followed by "source ~/.bashrc" before   *

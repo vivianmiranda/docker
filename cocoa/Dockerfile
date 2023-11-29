@@ -70,7 +70,7 @@ ENV CONDA_DIR=/opt/conda \
     MAKE_NUM_THREADS=4 \
     OMP_PROC_BIND=close \
     OMP_NUM_THREADS=3 \
-    OPENMPI_VERSION=4.0.7 \
+    OPENMPI_VERSION=4.1.6 \
     GOSU_VERSION=1.16 \
     CONDAV=4.12.0
 
@@ -292,35 +292,77 @@ RUN conda create --name cocoalite python=3.7 --quiet --yes \
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 RUN conda create --name cocoapy38 python=3.8 --quiet --yes \
-  && conda install -n cocoapy38 --quiet --yes  \
-      'conda-forge::libgcc-ng=12.3.0' \
-      'conda-forge::libstdcxx-ng=12.3.0' \
-      'conda-forge::libgfortran-ng=12.3.0' \
-      'conda-forge::gxx_linux-64=12.3.0' \
-      'conda-forge::gcc_linux-64=12.3.0' \
-      'conda-forge::gfortran_linux-64=12.3.0' \
-      'conda-forge::openmpi=4.1.5' \
-      'conda-forge::sysroot_linux-64=2.17' \
-      'conda-forge::git=2.40.0' \
-      'conda-forge::git-lfs=3.3.0' \
-      'conda-forge::fftw=3.3.10' \
-      'conda-forge::cfitsio=4.0.0' \
-      'conda-forge::hdf5=1.14.0' \
-      'conda-forge::lapack=3.9.0' \
-      'conda-forge::openblas=0.3.23' \
-      'conda-forge::lapack=3.9.0' \
-      'conda-forge::gsl=2.7' \
-      'conda-forge::cmake=3.26.4' \
-      'conda-forge::xz==5.2.6' \
-      'conda-forge::armadillo=11.4.4' \
-      'conda-forge::boost-cpp=1.81.0' \
-      'conda-forge::expat=2.5.0' \
-      'conda-forge::cython=0.29.35' \
-      'conda-forge::scipy=1.10.1' \
-      'conda-forge::pandas=1.5.3' \
-      'conda-forge::numpy=1.23.5' \
-      'conda-forge::matplotlib=3.7.1' \
-      'conda-forge::mpi4py=3.1.4' \
+  &&  conda install -n cocoapy38 --quiet --yes  \
+       'conda-forge::libgcc-ng=12.3.0' \
+       'conda-forge::libstdcxx-ng=12.3.0' \
+       'conda-forge::libgfortran-ng=12.3.0' \
+       'conda-forge::gxx_linux-64=12.3.0' \
+       'conda-forge::gcc_linux-64=12.3.0' \
+       'conda-forge::gfortran_linux-64=12.3.0' \
+       'conda-forge::openmpi=4.1.5' \
+       'conda-forge::sysroot_linux-64=2.17' \
+       'conda-forge::git=2.40.0' \
+       'conda-forge::git-lfs=3.3.0' \
+       'conda-forge::fftw=3.3.10' \
+       'conda-forge::cfitsio=4.0.0' \
+       'conda-forge::hdf5=1.14.0' \
+       'conda-forge::lapack=3.9.0' \
+       'conda-forge::openblas=0.3.23' \
+       'conda-forge::lapack=3.9.0' \
+       'conda-forge::gsl=2.7' \
+       'conda-forge::cmake=3.26.4' \
+       'conda-forge::xz==5.2.6' \
+       'conda-forge::armadillo=11.4.4' \
+       'conda-forge::boost-cpp=1.81.0' \
+       'conda-forge::expat=2.5.0' \
+       'conda-forge::cython=0.29.35' \
+       'conda-forge::scipy=1.10.1' \
+       'conda-forge::pandas=1.5.3' \
+       'conda-forge::numpy=1.23.5' \
+       'conda-forge::matplotlib=3.7.1' \
+       'conda-forge::mpi4py=3.1.4' \
+       'conda-forge::pip=23.1.2' \
+  && conda clean --all -f -y \
+  && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
+  && rm -rf /opt/conda/share/man/* \
+  && rm -rf /opt/conda/envs/cocoa/man/* \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+RUN conda create --name cocoapy38ML python=3.8 --quiet --yes \
+  &&  conda install -n cocoapy38 --quiet --yes  \
+       'conda-forge::libgcc-ng=12.3.0' \
+       'conda-forge::libstdcxx-ng=12.3.0' \
+       'conda-forge::libgfortran-ng=12.3.0' \
+       'conda-forge::gxx_linux-64=12.3.0' \
+       'conda-forge::gcc_linux-64=12.3.0' \
+       'conda-forge::gfortran_linux-64=12.3.0' \
+       'conda-forge::openmpi=4.1.5' \
+       'conda-forge::sysroot_linux-64=2.17' \
+       'conda-forge::git=2.40.0' \
+       'conda-forge::git-lfs=3.3.0' \
+       'conda-forge::fftw=3.3.10' \
+       'conda-forge::cfitsio=4.0.0' \
+       'conda-forge::hdf5=1.14.0' \
+       'conda-forge::lapack=3.9.0' \
+       'conda-forge::openblas=0.3.23' \
+       'conda-forge::lapack=3.9.0' \
+       'conda-forge::gsl=2.7' \
+       'conda-forge::cmake=3.26.4' \
+       'conda-forge::xz==5.2.6' \
+       'conda-forge::armadillo=11.4.4' \
+       'conda-forge::boost-cpp=1.81.0' \
+       'conda-forge::expat=2.5.0' \
+       'conda-forge::cython=0.29.35' \
+       'conda-forge::scipy=1.10.1' \
+       'conda-forge::pandas=1.5.3' \
+       'conda-forge::numpy=1.23.5' \
+       'conda-forge::matplotlib=3.7.1' \
+       'conda-forge::mpi4py=3.1.4' \
+       'conda-forge::pip=23.1.2' \
   && $CONDA_PREFIX/bin/pip install --no-cache-dir \
       'tensorflow-cpu==2.12.0' \
       'keras==2.12.0' \
@@ -356,10 +398,12 @@ RUN conda create --name cocoalitepy38 python=3.8 --quiet --yes \
   && rm -rf /opt/conda/envs/cocoa/man/* \
   && /usr/local/bin/fix-permissions $HOME \
   && /usr/local/bin/fix-permissions $CONDA_DIR
+
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
+
 COPY jupyter_notebook_config.py $HOME/.jupyter/jupyter_notebook_config.py
 COPY bashrc $HOME/bash.bashrc
 
@@ -379,3 +423,11 @@ WORKDIR $HOME
 VOLUME ["$HOME/host/"]
 
 RUN /usr/local/bin/fix-permissions $HOME 
+
+
+
+# REMIND HOW TO BUILD THIS FILE
+# docker build . -f Dockerfile
+# docker image ls
+# docker tag XXX vivianmiranda/whovian-cocoa
+# docker push vivianmiranda/whovian-cocoa
