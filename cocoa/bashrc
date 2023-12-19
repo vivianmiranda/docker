@@ -21,26 +21,25 @@ alias ls="ls --color=auto"
 echo -e "\e[1;31m"
 cat<<TF
 
-**************************************************************************
-*                                                                        *
-* Welcome to Docker Cocoa!                                               *
-*                                                                        *
-* - The command "docker run (...)" you just typed created a container    *
-*   named cocoa2023 from the image whovian-cocoa. Containers != images.  *
-*                                                                        *
-* - Files located on ~/host are saved on the host computer (safer)       *
-*                                                                        *
-* - Files outside ~/host are lost if you delete the container            *
-*                                                                        *
-* - How do you restart the container? "docker start -ai cocoa2023"       *
-*                                                                        *
-* - When running the cocoa2023 container for the first time, you must    *
-* type "conda init bash" followed by "source ~/.bashrc" before           *
-* activating the cocoa environment.                                      *
-*                                                                        *
-* - How do you delete the container and lose all work and data not       * 
-*   copied to the host computer? Type "docker rm -f cocoa2023"           *
-*                                                                        *
+***************************************************************************
+*                                                                         *
+* Welcome to Docker Cocoa!                                                *
+*                                                                         *
+* - The command "docker run (...)" you just typed created a container     *
+*   named cocoa2023 from the image whovian-cocoa. Containers != images.   *
+*                                                                         *
+* - Files located on ~/host are saved on the host computer (safer)        *
+* - Files outside ~/host are lost if you delete the container             *
+*                                                                         *
+* - When running the cocoa2023 container for the first time, you must:    *
+*   - type "conda init bash" followed by "source ~/.bashrc" to init conda *
+*   - type "git lfs install" to init git lfs                              *
+*                                                                         *
+* - How do you restart the container? "docker start -ai cocoa2023"        *
+*                                                                         *
+* - How do you delete the container and lose all work and data not        *
+*   copied to the host computer? Type "docker rm -f cocoa2023"            *
+*                                                                         *
 **************************************************************************
 
 TF
