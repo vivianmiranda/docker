@@ -72,7 +72,7 @@ ENV CONDA_DIR=/opt/conda \
     OMP_NUM_THREADS=3 \
     OPENMPI_VERSION=4.1.6 \
     GOSU_VERSION=1.16 \
-    CONDAV=4.12.0
+    CONDAV=23.9.0-0
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -110,7 +110,7 @@ RUN curl -OL "https://github.com/google/protobuf/releases/download/v3.0.0/protoc
   && mv proto3/include/* /usr/local/include \
   && rm -rf proto3 protoc-3.0.0-linux-x86_64.zip 
 # --------------------------------------------------------------------------
-RUN wget --no-check-certificate https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz \
+RUN wget --no-check-certificate https://www.open-mpi.org/software/ompi/v4.1/downloads/openmpi-${OPENMPI_VERSION}.tar.gz \
   && tar xvzf openmpi-${OPENMPI_VERSION}.tar.gz \
   && rm -rf openmpi-${OPENMPI_VERSION}.tar.gz \
   && cd openmpi-${OPENMPI_VERSION} \
@@ -322,6 +322,8 @@ RUN conda create --name cocoapy38 python=3.8 --quiet --yes \
        'conda-forge::matplotlib=3.7.1' \
        'conda-forge::mpi4py=3.1.4' \
        'conda-forge::pip=23.1.2' \
+  && /opt/conda/envs/cocoapy38/bin/pip install --no-cache-dir \
+       'virtualenv==20.17.1' \
   && conda clean --all -f -y \
   && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
   && rm -rf /opt/conda/share/man/* \
@@ -363,7 +365,8 @@ RUN conda create --name cocoapy38ML python=3.8 --quiet --yes \
        'conda-forge::matplotlib=3.7.1' \
        'conda-forge::mpi4py=3.1.4' \
        'conda-forge::pip=23.1.2' \
-  && $CONDA_PREFIX/bin/pip install --no-cache-dir \
+  && /opt/conda/envs/cocoapy38ML/bin/pip install --no-cache-dir \
+      'virtualenv==20.17.1' \
       'tensorflow-cpu==2.12.0' \
       'keras==2.12.0' \
       'keras-preprocessing==1.1.2' \
@@ -398,14 +401,16 @@ RUN conda create --name cocoalitepy38 python=3.8 --quiet --yes \
   && rm -rf /opt/conda/envs/cocoa/man/* \
   && /usr/local/bin/fix-permissions $HOME \
   && /usr/local/bin/fix-permissions $CONDA_DIR
-
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
+# VM: solves an important use: ls -l `which sh` -> bash not dash
+RUN echo "dash dash/sh boolean false" | debconf-set-selections
+RUN DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash
 
 COPY jupyter_notebook_config.py $HOME/.jupyter/jupyter_notebook_config.py
-COPY bashrc $HOME/bash.bashrc
+COPY bashrc $HOME/bash.bashrc 
 
 
 RUN chmod +x /usr/bin/tini \
@@ -423,7 +428,6 @@ WORKDIR $HOME
 VOLUME ["$HOME/host/"]
 
 RUN /usr/local/bin/fix-permissions $HOME 
-
 
 
 # REMIND HOW TO BUILD THIS FILE

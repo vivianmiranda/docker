@@ -25,25 +25,22 @@ cat<<TF
 *                                                                        *
 * Welcome to Docker Cocoa!                                               *
 *                                                                        *
-* PS: The command "docker run --platform linux/amd64 --hostname bdc      *
-*     -it -p 8080:8888 -v \$(pwd):/home/whovian/host/ -v                  *
-*     ~/.ssh:/home/whovian/.ssh:ro --name cocoa2023                      *
-*     vivianmiranda/whovian-cocoa" you initially typed created a docker  *
-*     container named cocoa2023 from the docker image                    *
-*     vivianmiranda/bdc2022. Containers and images are different things! *
+* - The command "docker run (...)" you just typed created a container    *
+*   named cocoa2023 from the image whovian-cocoa. Containers != images.  *
 *                                                                        *
-* PS2: Files located on ~/host are saved on the host computer (safer)    *
+* - Files located on ~/host are saved on the host computer (safer)       *
 *                                                                        *
-* PS3: Files outside ~/host are lost if you delete the container         *
+* - Files outside ~/host are lost if you delete the container            *
 *                                                                        *
-* PS4: How to restart our container? Type "docker start -ai cocoa2023"     *
+* - How do you restart the container? "docker start -ai cocoa2023"       *
 *                                                                        *
-* PS5: When running the cocoa2023 container for the first time, you must *
-*      to type "conda init bash" followed by "source ~/.bashrc" before   *
-*      activating the cocoa environment via "conda activate cocoa"       *
+* - When running the cocoa2023 container for the first time, you must    *
+* type "conda init bash" followed by "source ~/.bashrc" before           *
+* activating the cocoa environment.                                      *
 *                                                                        *
-* PS6: How to delete the container and lose all work and data that were  *
-*      not copied to the host computer? Type "docker rm -f cocoa2023"    *
+* - How do you delete the container and lose all work and data not       * 
+*   copied to the host computer? Type "docker rm -f cocoa2023"           *
+*                                                                        *
 **************************************************************************
 
 TF
@@ -67,5 +64,3 @@ fi
 
 # Turn off colors
 echo -e "\e[m"
-
-
