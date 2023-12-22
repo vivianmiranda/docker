@@ -405,6 +405,23 @@ RUN conda create --name cocoalitepy38 python=3.8 --quiet --yes \
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
+RUN apt-get install libc6-dev
+
+RUN wget https://sourceware.org/pub/valgrind/valgrind-3.22.0.tar.bz2 \
+  && tar -xvjf valgrind-3.22.0.tar.bz2 \
+  && cd ./valgrind-3.22.0 \
+  && ./configure --enable-shared=yes --enable-static=yes \
+  && make \
+  && make install \
+  && cd ../ \
+  && rm -rf ./valgrind-3.22.0 \
+  && /usr/local/bin/fix-permissions $HOME \
+  && /usr/local/bin/fix-permissions $CONDA_DIR
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 # VM: solves an important use: ls -l `which sh` -> bash not dash
 RUN echo "dash dash/sh boolean false" | debconf-set-selections
 RUN DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash
