@@ -49,7 +49,7 @@ RUN apt-get update \
 # --------------------------------------------------------------------------
 # GLOBAL ENV VARIABLES
 
-ENV CONDA_DIR=/opt/conda \
+ENV CONDA_DIR=$HOME/conda \
     SHELL=/bin/bash \
     NB_USER=$NB_USER \
     NB_UID=$NB_UID \
@@ -126,7 +126,7 @@ https://repo.continuum.io/miniconda/Miniconda3-py39_${CONDAV}-Linux-x86_64.sh \
   && $CONDA_DIR/bin/conda clean --all -f -y   \
   && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
   && /usr/local/bin/fix-permissions $HOME  \
-  && /usr/local/bin/fix-permissions $CONDA_DIR   
+  && /usr/local/bin/fix-permissions $CONDA_DIR    
 ENV PATH=$CONDA_DIR/bin:$PATH
 
 # --------------------------------------------------------------------------
@@ -145,6 +145,22 @@ RUN conda env create --name cocoa --file=$HOME/cocoapy39.yml --quiet --yes \
   && conda run --no-capture-output -n cocoa /bin/bash $HOME/init_cocoa39.sh \
   && /usr/local/bin/fix-permissions $HOME \
   && /usr/local/bin/fix-permissions $CONDA_DIR 
+
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+
+RUN mkdir -p $HOME/.jupyter 
+
+RUN /usr/local/bin/fix-permissions $CONDA_DIR
+RUN /usr/local/bin/fix-permissions $HOME 
+RUN /usr/local/bin/fix-permissions $HOME/.jupyter
+
+RUN chown -R $NB_USER:$NB_GID $HOME
+RUN chown -R $NB_USER:$NB_GID $CONDA_DIR
+RUN chown -R $NB_USER:$NB_GID $HOME/.jupyter 
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -170,12 +186,9 @@ CMD ["/bin/bash", "-c", "source $HOME/bash.bashrc; /bin/bash"]
 USER $NB_UID
 WORKDIR $HOME
 VOLUME ["$HOME/host/"]
-
-RUN /usr/local/bin/fix-permissions $HOME 
-
-
+ 
 # REMIND HOW TO BUILD THIS FILE
 # docker build . -f Dockerfile
 # docker image ls
-# docker tag XXX vivianmiranda/whovian-cocoa
+# docker tag 309804e7c602 vivianmiranda/whovian-cocoa
 # docker push vivianmiranda/whovian-cocoa
