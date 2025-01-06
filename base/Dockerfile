@@ -1,50 +1,48 @@
-#FROM vivianmiranda/whovian-base-base:v3.0
-FROM vivianmiranda/whovian-base-base:v4.0
+FROM vivianmiranda/whovian-base-base
 #--------------------------------------------------------------------
 # Install OpenCV 
 #--------------------------------------------------------------------
-
-RUN git clone https://github.com/opencv/opencv.git \
-  && cd ./opencv \
-  && git checkout 4.7.0 \
-  && mkdir ./build \
-  && cd ./build \
-  && git clone https://github.com/opencv/opencv_contrib.git \
-  && cmake -DCMAKE_BUILD_TYPE=RELEASE \
-     -DOPENCV_EXTRA_MODULES_PATH=./opencv_contrib/modules \
-     -DPYTHON_EXECUTABLE=/usr/bin/python3.8/ \
-     -DBUILD_TIFF=OFF \
-     -DBUILD_TESTS=OFF \
-     -DBUILD_opencv_python2=OFF \ 
-     -DBUILD_opencv_python3=ON \
-     -DBUILD_EXAMPLES=OFF \
-     -DOPENCV_ENABLE_NONFREE=ON \
-     -DOPENCV_GENERATE_PKGCONFIG=YES \
-     -DENABLE_FAST_MATH=ON \
-     -DCUDA_FAST_MATH=ON \
-     -DOPENCV_DNN_CUDA=OFF \
-     -DWITH_CUBLAS=OFF \
-     -DFORCE_VTK=ON \
-     -DWITH_CUDA=ON \
-     -DWITH_CUDNN=ON \
-     -DWITH_EIGEN=ON \
-     -DWITH_FFMPEG=ON \
-     -DWITH_GTK=OFF \
-     -DWITH_JPEG=ON \
-     -DWITH_PNG=ON \
-     -DWITH_TBB=OFF \
-     -DWITH_GDAL=OFF \
-     -DWITH_JAVA=OFF \
-     -DINSTALL_C_EXAMPLES=OFF \
-     -DINSTALL_PYTHON_EXAMPLES=OFF \
-     -DCMAKE_C_COMPILER=gcc-9 \
-     -DCMAKE_CXX_COMPILER=g++-9 .. \
-  && make -j $MAKE_NUM_THREADS \
-  && make install \
-  && cd ../../ \
-  && rm -rf /opencv \
-  && ldconfig \
-  && /usr/local/bin/fix-permissions $HOME 
+#RUN git clone https://github.com/opencv/opencv.git \
+#  && cd ./opencv \
+#  && git checkout 4.10.0 \
+#  && mkdir ./build \
+#  && cd ./build \
+#  && git clone https://github.com/opencv/opencv_contrib.git \
+#  && cmake -DCMAKE_BUILD_TYPE=RELEASE \
+#     -DOPENCV_EXTRA_MODULES_PATH=./opencv_contrib/modules \
+#     -DPYTHON_EXECUTABLE=/usr/bin/python3.8/ \
+#     -DBUILD_TIFF=OFF \
+#     -DBUILD_TESTS=OFF \
+#     -DBUILD_opencv_python2=OFF \ 
+#     -DBUILD_opencv_python3=ON \
+#     -DBUILD_EXAMPLES=OFF \
+#     -DOPENCV_ENABLE_NONFREE=ON \
+#     -DOPENCV_GENERATE_PKGCONFIG=YES \
+#     -DENABLE_FAST_MATH=ON \
+#     -DCUDA_FAST_MATH=ON \
+#     -DOPENCV_DNN_CUDA=OFF \
+#     -DWITH_CUBLAS=OFF \
+#     -DFORCE_VTK=ON \
+#     -DWITH_CUDA=ON \
+#     -DWITH_CUDNN=ON \
+#     -DWITH_EIGEN=ON \
+#     -DWITH_FFMPEG=ON \
+#     -DWITH_GTK=OFF \
+#     -DWITH_JPEG=ON \
+#     -DWITH_PNG=ON \
+#     -DWITH_TBB=OFF \
+#     -DWITH_GDAL=OFF \
+#     -DWITH_JAVA=OFF \
+#     -DINSTALL_C_EXAMPLES=OFF \
+#     -DINSTALL_PYTHON_EXAMPLES=OFF \
+#     -DCMAKE_C_COMPILER=gcc-9 \
+#     -DCMAKE_CXX_COMPILER=g++-9 .. \
+#  && make -j $MAKE_NUM_THREADS \
+#  && make install \
+#  && cd ../../ \
+#  && rm -rf /opencv \
+#  && ldconfig \
+#  && /usr/local/bin/fix-permissions $HOME 
 
 #--------------------------------------------------------------------
 # INSTALL GOSU

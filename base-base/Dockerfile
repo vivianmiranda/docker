@@ -1,4 +1,5 @@
-FROM nvidia/cuda:12.0.1-cudnn8-devel-ubuntu22.04
+#FROM nvidia/cuda:12.6.2-cudnn-devel-ubuntu22.04
+FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
 
 ARG NB_USER="whovian"
 ARG NB_UID=1000
@@ -9,39 +10,41 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update \
-  && apt-get install -yq --fix-missing software-properties-common  \
-    apt-utils build-essential \
+  && apt-get install -yq --fix-missing software-properties-common apt-utils build-essential \
   && apt-get update \
   && add-apt-repository ppa:ubuntu-toolchain-r/test \
   && apt-get update \
   && apt-get install -yq --fix-missing --no-install-recommends \
-    git autoconf dpkg git-lfs xz-utils pkg-config python3-pip python3-pip \
-  && apt-get install -yq --fix-missing --no-install-recommends libgflags-dev \
+    git autoconf dpkg git-lfs xz-utils pkg-config python3-pip python3-pip libgflags-dev \
     libhdf5-dev libarpack2-dev nano make wget curl \
     libgtk2.0-dev libglib2.0-0 libfreetype6-dev libleveldb-dev \
     sqlite3 libv4l-dev fonts-liberation tzdata unzip grep libsnappy-dev \
     sed libsqlite3-dev sudo locales fonts-dejavu libgoogle-glog-dev  \
     texlive-xetex texlive-fonts-recommended texlive-plain-generic libx264-dev \
     libtool automake zlib1g-dev libcurl4-gnutls-dev ca-certificates libssl-dev \
-    libtiff5-dev libpng-dev run-one ffmpeg gcc-10 gfortran-10 g++-10 gcc-9 gfortran-9 g++-9 \
-    gcc-11 gfortran-11 g++-11 gcc-12 gfortran-12 g++-12 emacs sed vim \
+    libtiff5-dev libpng-dev run-one ffmpeg \
+    gcc-10 gfortran-10 g++-10 gcc-9 gfortran-9 g++-9 gcc-11 gfortran-11 g++-11 \
+    gcc-12 gfortran-12 g++-12 g++-13 gcc-13 gfortran-13 g++-14 gfortran-14 gcc-14 \
+    emacs sed vim man-db manpages-posix \
     libjpeg-dev libtbb-dev dvipng libavcodec-dev libeigen3-dev \
     libjpeg8-dev libavformat-dev libswscale-dev ca-certificates-java \
     "openjdk-11-jre-headless" libatlas-base-dev libgtk-3-dev libxvidcore-dev \
+    texlive texlive-xetex  texlive-latex-extra texlive-plain-generic \
+    texlive-fonts-recommended dvipng cm-super ghostscript dvipng 
 # ------------------------------------------------------------------------
-  && ln -s /bin/tar /bin/gtar \
+RUN ln -s /bin/tar /bin/gtar \
   && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
   && locale-gen
 # ------------------------------------------------------------------------
-RUN  update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 12 \
-  && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 12 \
-  && update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-12 12 \
-  && update-alternatives --set gcc /usr/bin/gcc-12 \
-  && update-alternatives --set g++ /usr/bin/g++-12 \
-  && update-alternatives --set gfortran /usr/bin/gfortran-12 
+RUN  update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 14 \
+  && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 14 \
+  && update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-14 14 \
+  && update-alternatives --set gcc /usr/bin/gcc-14 \
+  && update-alternatives --set g++ /usr/bin/g++-14 \
+  && update-alternatives --set gfortran /usr/bin/gfortran-14 
 # ------------------------------------------------------------------------
-RUN python3 -m pip install pip --upgrade --quiet --no-cache-dir \
-  && pip3 install numpy==1.24.0 --quiet --no-cache-dir 
+ENV PIP_BREAK_SYSTEM_PACKAGES 1
+RUN pip3 install numpy==1.26.3 --quiet --no-cache-dir 
 # ------------------------------------------------------------------------
 RUN curl -L "https://github.com/krallin/tini/releases/download/v0.19.0/tini_0.19.0.deb" > tini.deb \
   && dpkg -i tini.deb \
@@ -96,10 +99,9 @@ RUN chmod a+rx /usr/local/bin/fix-permissions \
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # INSTALL CORE RESEARCH LIBRARIES FROM SOURCE
-
 RUN git clone  https://github.com/Kitware/CMake.git \
   && cd ./CMake \
-  && git checkout v3.16.0 \
+  && git checkout v3.26.4 \
   && ./bootstrap \
   && make -j $MAKE_NUM_THREADS \
   && make install \
@@ -112,9 +114,8 @@ RUN curl -OL "https://github.com/google/protobuf/releases/download/v3.0.0/protoc
   && mv proto3/include/* /usr/local/include \
   && rm -rf proto3 protoc-3.0.0-linux-x86_64.zip 
 #--------------------------------------------------------------------
-ENV OPENMPI_VERSION=4.0.7
-
-RUN wget --no-check-certificate https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-${OPENMPI_VERSION}.tar.gz \
+ENV OPENMPI_VERSION=4.1.5
+RUN wget --no-check-certificate https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-${OPENMPI_VERSION}.tar.gz \
   && tar xvzf openmpi-${OPENMPI_VERSION}.tar.gz \
   && rm -rf openmpi-${OPENMPI_VERSION}.tar.gz \
   && cd openmpi-${OPENMPI_VERSION} \
@@ -127,7 +128,7 @@ RUN wget --no-check-certificate https://www.open-mpi.org/software/ompi/v4.0/down
 #--------------------------------------------------------------------
 RUN git clone https://github.com/xianyi/OpenBLAS.git \
   && cd OpenBLAS \
-  && git checkout v0.3.21 \
+  && git checkout v0.3.27 \
   && make -j $MAKE_NUM_THREADS USE_OPENMP=1 all \
   && make install PREFIX=/usr/local \
   && cd ../ \
@@ -135,24 +136,24 @@ RUN git clone https://github.com/xianyi/OpenBLAS.git \
 #--------------------------------------------------------------------
 RUN git clone https://github.com/Reference-LAPACK/lapack lapack \
   && cd lapack \
-  && git checkout v3.11.0 \
+  && git checkout v3.12.0 \
   && mkdir build \
   && cd build \
-  && cmake -DBUILD_SHARED_LIBS=TRUE --prefix=/usr/local --log-level=ERROR .. \
+  && cmake -DBUILD_SHARED_LIBS=TRUE -DCMAKE_INSTALL_PREFIX=/usr/local --log-level=ERROR .. \
   && make -j $MAKE_NUM_THREADS all \
   && make install \
   && cd ../../ \
-  && rm -rf lapack-3.11.0/ 
+  && rm -rf lapack-3.12.0/ 
 #--------------------------------------------------------------------
-RUN wget -q http://ftp.wayne.edu/gnu/gsl/gsl-2.7.tar.gz \
-  && tar zxvf gsl-2.7.tar.gz \
-  && rm -f gsl-2.7.tar.gz \
-  && cd gsl-2.7 \
+RUN wget -q http://ftp.wayne.edu/gnu/gsl/gsl-2.8.tar.gz \
+  && tar zxvf gsl-2.8.tar.gz \
+  && rm -f gsl-2.8.tar.gz \
+  && cd gsl-2.8 \
   && ./configure --enable-shared=yes --enable-static=yes \
   && make -j $MAKE_NUM_THREADS \
   && make install \
   && cd ../ \
-  && rm -rf gsl-2.7/ 
+  && rm -rf gsl-2.8/ 
 #--------------------------------------------------------------------
 RUN wget -q http://www.fftw.org/fftw-3.3.10.tar.gz \
   && tar zxvf fftw-3.3.10.tar.gz \
@@ -164,42 +165,42 @@ RUN wget -q http://www.fftw.org/fftw-3.3.10.tar.gz \
   && cd ../ \
   && rm -rf fftw-3.3.10/ 
 #--------------------------------------------------------------------
-RUN wget -q http://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio-4.2.0.tar.gz \
-  && tar zxvf cfitsio-4.2.0.tar.gz \
-  && rm -f cfitsio-4.2.0.tar.gz \
-  && cd cfitsio-4.2.0/ \
+RUN wget -q http://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio-4.5.0.tar.gz \
+  && tar zxvf cfitsio-4.5.0.tar.gz \
+  && rm -f cfitsio-4.5.0.tar.gz \
+  && cd cfitsio-4.5.0/ \
    && mkdir build \
   && cd build \
   && cmake -DBUILD_SHARED_LIBS=TRUE --log-level=ERROR .. \
   && make -j $MAKE_NUM_THREADS \
   && make install \
   && cd ../ \
-  && rm -rf cfitsio-4.2.0/ 
+  && rm -rf cfitsio-4.5.0/ 
 #--------------------------------------------------------------------
-RUN wget -q https://sourceforge.net/projects/arma/files/armadillo-12.0.1.tar.xz \
-  && tar xvf armadillo-12.0.1.tar.xz\
-  && rm -f armadillo-12.0.1.tar.xz \
-  && cd armadillo-12.0.1/ \
+RUN wget -q https://sourceforge.net/projects/arma/files/armadillo-14.2.2.tar.xz \
+  && tar xvf armadillo-14.2.2.tar.xz\
+  && rm -f armadillo-14.2.2.tar.xz \
+  && cd armadillo-14.2.2/ \
   && cmake -DBUILD_SHARED_LIBS=TRUE --log-level=ERROR . \
   && make -j $MAKE_NUM_THREADS \
   && make install \
   && cd ../ \
-  && rm -rf armadillo-12.0.1/
+  && rm -rf armadillo-14.2.2/
 #--------------------------------------------------------------------
-RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz \
-  && tar zxvf boost_1_81_0.tar.gz \
-  && rm boost_1_81_0.tar.gz \
-  && cd boost_1_81_0 \
+RUN wget https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz \
+  && tar zxvf boost_1_87_0.tar.gz \
+  && rm boost_1_87_0.tar.gz \
+  && cd boost_1_87_0 \
   && ./bootstrap.sh \
   && ./b2  --with-regex install \
   && cd ../ \
-  && rm -rf boost_1_81_0 \
+  && rm -rf boost_1_87_0 \
 #--------------------------------------------------------------------
   && ldconfig 
 #--------------------------------------------------------------------
 RUN git clone https://github.com/AcademySoftwareFoundation/openexr.git \
   && cd ./openexr \
-  && git checkout v3.1.6 \
+  && git checkout v3.3.0 \
   && cmake . \
   && make -j $MAKE_NUM_THREADS \
   && make install \
@@ -208,7 +209,7 @@ RUN git clone https://github.com/AcademySoftwareFoundation/openexr.git \
 #--------------------------------------------------------------------
 RUN git clone https://github.com/apache/xerces-c.git \
   && cd ./xerces-c \
-  && git checkout v3.2.4 \
+  && git checkout v3.3.0 \
   && cmake . \
   && make -j $MAKE_NUM_THREADS \
   && make install \
