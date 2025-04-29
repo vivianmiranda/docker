@@ -221,8 +221,50 @@ RUN cp /mdspan/include/experimental/mdarray /usr/local/include/ \
     && cp -r /mdspan/include/experimental/__p1684_bits /usr/local/include/ \
     && cp -r /mdspan/include/experimental/__p2630_bits /usr/local/include/ \
     && rm -rf /mdspan/
-    
+
+# ------------------------------------------------------------------
+# DOWNLOAD EXPERIMENTAL GCC SNAPSHOT (GCC15)
+RUN wget --content-disposition https://kayari.org/gcc-latest/gcc-latest.deb \
+    && apt install ./gcc-latest_15.0.1-20250406gitb39d5fad621c.deb \ 
+    &&  rm -rf gcc-latest_15.0.1-20250406gitb39d5fad621c.deb
+
+# ------------------------------------------------------------------
+# ------------------------------------------------------------------
+# ------------------------------------------------------------------
+ENV VCPKG_DIR /usr/local/
+
+RUN apt-get install -yq --fix-missing --no-install-recommends unzip
+
+RUN git clone https://github.com/Microsoft/vcpkg.git \
+    && cd vcpkg \
+    && ./bootstrap-vcpkg.sh \
+    && ./vcpkg integrate install \
+    && ./vcpkg install range-v3 \
+    && cd ../
+  
 RUN rm -rf /var/lib/apt/lists/*
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+
+RUN git clone https://github.com/catchorg/Catch2 \
+  && cd Catch2 \ 
+  && mkdir build \
+  && cd build \
+  && cmake .. \
+  && make \
+  && make install \
+  && cd ../../ \
+  && rm -rf Catch2
+
+RUN git clone https://github.com/contour-terminal/libunicode/ \
+    && cd libunicode \
+    && cmake -B build -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build build \
+    && cmake --install build \
+    && cd .. \
+    && rm -rf libunicode
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -253,6 +295,14 @@ RUN chmod +x /usr/bin/tini \
   && mkdir -p $HOME/host/ && chmod -R a+rwx $HOME/host/ \
   && rm -rf ~/.cache/pip
 
+RUN apt-get update \
+  && apt-get install -yq --fix-missing libtbb-dev \
+  && apt-get clean \
+  && apt-get autoremove --yes \
+  && rm -rf /var/lib/apt/lists/* \
+  && rm -rf /usr/share/doc/ \
+  && rm -rf /usr/share/man/
+
 EXPOSE 8888
 
 ENTRYPOINT ["tini", "-g", "--"]
@@ -268,4 +318,4 @@ VOLUME ["$HOME/host/"]
 # docker tag 143f15f6f0e6 vivianmiranda/whovian-phy504lite
 # docker push vivianmiranda/whovian-phy504lite
 # How to run?
-# docker run --platform linux/amd64 --hostname whovianphy504 --name phy504c1 -it -p 8888:8888 -v $(pwd):/home/whovian/host/ -v ~/.ssh:/home/whovian/.ssh:ro vivianmiranda/whovian-phy504lite
+# docker run --platform linux/amd64 --hostname whovianphy504 --name phy504_2025_v2 -it -p 8888:8888 -v $(pwd):/home/whovian/host/ -v ~/.ssh:/home/whovian/.ssh:ro vivianmiranda/whovian-phy504lite

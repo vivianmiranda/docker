@@ -254,6 +254,12 @@ RUN cp /mdspan/include/experimental/mdarray /usr/local/include/ \
     
 RUN rm -rf /var/lib/apt/lists/*
 
+# ------------------------------------------------------------------
+# DOWNLOAD EXPERIMENTAL GCC SNAPSHOT (GCC15)
+RUN wget --content-disposition https://kayari.org/gcc-latest/gcc-latest.deb \
+    && apt install ./gcc-latest_15.0.1-20250330gitf7085e23148d.deb \ 
+    &&  rm -rf gcc-latest_15.0.1-20250330gitf7085e23148d.deb
+
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
