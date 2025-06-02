@@ -64,8 +64,7 @@ ENV CONDA_DIR=$HOME/conda \
     OMP_PROC_BIND=close \
     OMP_NUM_THREADS=3 \
     OPENMPI_VERSION=4.1.6 \
-    GOSU_VERSION=1.16 \
-    CONDAV=24.5.0-0
+    GOSU_VERSION=1.16
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -116,10 +115,10 @@ RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su \
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # INSTALL CONDA
-  && wget --quiet  \
-https://repo.continuum.io/miniconda/Miniconda3-py39_${CONDAV}-Linux-x86_64.sh \
-  && /bin/bash Miniconda3-py39_${CONDAV}-Linux-x86_64.sh -f -b -p $CONDA_DIR \
-  && rm Miniconda3-py39_${CONDAV}-Linux-x86_64.sh \
+  && wget --quiet  \ 
+https://repo.continuum.io/miniconda/Miniconda3-py310_25.3.1-1-Linux-x86_64.sh \
+  && /bin/bash Miniconda3-py310_25.3.1-1-Linux-x86_64.sh -f -b -p $CONDA_DIR \
+  && rm Miniconda3-py310_25.3.1-1-Linux-x86_64.sh \
   && $CONDA_DIR/bin/conda config --system --set auto_update_conda false \
   && $CONDA_DIR/bin/conda config --system --set show_channel_urls true \
   && $CONDA_DIR/bin/conda config --system --set auto_activate_base false \
@@ -136,15 +135,15 @@ ENV PATH=$CONDA_DIR/bin:$PATH
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 
-COPY cocoapy39.yml $HOME/cocoapy39.yml
-COPY init_cocoa39.sh $HOME/init_cocoa39.sh
+COPY cocoapy310.yml $HOME/cocoapy310.yml
+COPY init_cocoa10.sh $HOME/init_cocoa10.sh
 
-RUN conda env create --name cocoa --file=$HOME/cocoapy39.yml --quiet --yes \
+RUN conda env create --name cocoa --file=$HOME/cocoapy310.yml --quiet --yes \
   && conda clean --all -f -y  \
   && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
   && rm -rf $CONDA_DIR/share/man/* \
   && rm -rf $CONDA_DIR/envs/cocoa/man/* \
-  && conda run --no-capture-output -n cocoa /bin/bash $HOME/init_cocoa39.sh \
+  && conda run --no-capture-output -n cocoa /bin/bash $HOME/init_cocoa10.sh \
   && /usr/local/bin/fix-permissions $HOME \
   && /usr/local/bin/fix-permissions $CONDA_DIR 
 
@@ -192,5 +191,5 @@ VOLUME ["$HOME/host/"]
 # REMIND HOW TO BUILD THIS FILE
 # docker build . -f Dockerfile
 # docker image ls
-# docker tag 143f15f6f0e6 vivianmiranda/whovian-cocoa
+# docker tag 236e6116986c vivianmiranda/whovian-cocoa
 # docker push vivianmiranda/whovian-cocoa
