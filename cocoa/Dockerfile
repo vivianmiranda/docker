@@ -193,3 +193,7 @@ VOLUME ["$HOME/host/"]
 # docker image ls
 # docker tag 236e6116986c vivianmiranda/whovian-cocoa
 # docker push vivianmiranda/whovian-cocoa
+# run the container
+# install and compile cocoa
+# docker ps -a to check container id
+# docker commit containerid vivianmiranda/whovian-cocoa to push an image with preinstall and precompiled cocoa
