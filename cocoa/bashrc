@@ -26,15 +26,15 @@ cat<<TF
 * Welcome to Docker Cocoa!                                                *
 *                                                                         *
 * - The command "docker run (...)" you just typed created a container     *
-*   named cocoa2023 from the image whovian-cocoa. Containers != images.   *
+*   named cocoa2025 from the image whovian-cocoa. Containers != images.   *
 *                                                                         *
 * - Files located on ~/host are saved on the host computer (safer)        *
 * - Files outside ~/host are lost if you delete the container             *
 *                                                                         *
-* - How do you restart the container? "docker start -ai cocoa2023"        *
+* - How do you restart the container? "docker start -ai cocoa2025"        *
 *                                                                         *
 * - How do you delete the container and lose all work and data not        *
-*   copied to the host computer? Type "docker rm -f cocoa2023"            *
+*   copied to the host computer? Type "docker rm -f cocoa2025"            *
 *                                                                         *
 **************************************************************************
 

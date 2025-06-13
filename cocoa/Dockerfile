@@ -197,3 +197,4 @@ VOLUME ["$HOME/host/"]
 # install and compile cocoa
 # docker ps -a to check container id
 # docker commit containerid vivianmiranda/whovian-cocoa to push an image with preinstall and precompiled cocoa
+# docker push vivianmiranda/whovian-cocoa
