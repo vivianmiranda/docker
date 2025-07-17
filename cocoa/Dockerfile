@@ -19,7 +19,7 @@ RUN apt-get update \
     tzdata unzip grep libsnappy-dev sed sudo locales fonts-dejavu \
     libtool automake zlib1g-dev libcurl4-gnutls-dev libssl-dev run-one emacs sed vim \
     texlive texlive-xetex  texlive-latex-extra texlive-plain-generic \
-    texlive-fonts-recommended dvipng cm-super ghostscript dvipng \
+    texlive-fonts-recommended dvipng cm-super ghostscript dvipng less \
 # ------------------------------------------------------------------------
   && ln -s /bin/tar /bin/gtar \
   && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
@@ -147,7 +147,6 @@ RUN conda env create --name cocoa --file=$HOME/cocoapy310.yml --quiet --yes \
   && /usr/local/bin/fix-permissions $HOME \
   && /usr/local/bin/fix-permissions $CONDA_DIR 
 
-
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -161,8 +160,9 @@ RUN /usr/local/bin/fix-permissions $HOME/.jupyter
 
 RUN chown -R $NB_USER:$NB_GID $HOME
 RUN chown -R $NB_USER:$NB_GID $CONDA_DIR
-RUN chown -R $NB_USER:$NB_GID $HOME/.jupyter 
-
+RUN chown -R $NB_USER:$NB_GID $HOME/.jupyter
+ 
+RUN echo 'Docker!' | passwd --stdin root
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -172,6 +172,7 @@ RUN echo "dash dash/sh boolean false" | debconf-set-selections
 #RUN DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash
 
 COPY jupyter_notebook_config.py $HOME/.jupyter/jupyter_notebook_config.py
+RUN chown -R $NB_USER:$NB_GID $HOME/.jupyter/jupyter_notebook_config.py
 COPY bashrc $HOME/bash.bashrc 
 
 RUN chmod +x /usr/bin/tini \
@@ -197,4 +198,4 @@ VOLUME ["$HOME/host/"]
 # install and compile cocoa
 # docker ps -a to check container id
 # docker commit containerid vivianmiranda/whovian-cocoa to push an image with preinstall and precompiled cocoa
-# docker push vivianmiranda/whovian-cocoa
+# docker push vivianmiranda/whovian-cocoa:thin
