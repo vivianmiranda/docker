@@ -147,6 +147,8 @@ RUN conda create -n lock -c conda-forge python=3.10 conda-lock=2.* wget --quiet 
   && /usr/local/bin/fix-permissions $HOME \
   && /usr/local/bin/fix-permissions $CONDA_DIR 
 
+RUN echo "source activate cocoa" > ~/.bashrc
+ENV PATH /conda/envs/cocoa/bin:$PATH
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -191,7 +193,7 @@ VOLUME ["$HOME/host/"]
 # REMIND HOW TO BUILD THIS FILE
 # docker build . -f Dockerfile
 # docker image ls
-# docker tag 41615b0cd64b vivianmiranda/whovian-cocoa
+# docker tag c0e21013d469 vivianmiranda/whovian-cocoa
 # docker push vivianmiranda/whovian-cocoa
 # run the container
 # install and compile cocoa
