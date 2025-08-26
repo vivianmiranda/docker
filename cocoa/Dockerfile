@@ -111,14 +111,14 @@ RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su \
     && groupmod -g 1000 users \
     && mkdir -p $CONDA_DIR \
     && chown $NB_USER:$NB_GID $CONDA_DIR  \
-    && chmod g+w /etc/passwd \
+    && chmod g+w /etc/passwd
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
+
 # INSTALL CONDA
-  && wget --quiet  \ 
-https://repo.continuum.io/miniconda/Miniconda3-py310_25.3.1-1-Linux-x86_64.sh \
-  && /bin/bash Miniconda3-py310_25.3.1-1-Linux-x86_64.sh -f -b -p $CONDA_DIR \
-  && rm Miniconda3-py310_25.3.1-1-Linux-x86_64.sh \
+RUN curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh" \
+  && /bin/bash Miniforge3-Linux-x86_64.sh -f -b -p "${CONDA_DIR:?}" \
+  && rm Miniforge3-Linux-x86_64.sh \
   && $CONDA_DIR/bin/conda config --system --set auto_update_conda false \
   && $CONDA_DIR/bin/conda config --system --set show_channel_urls true \
   && $CONDA_DIR/bin/conda config --system --set auto_activate_base false \
@@ -135,15 +135,15 @@ ENV PATH=$CONDA_DIR/bin:$PATH
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 
-COPY cocoapy310.yml $HOME/cocoapy310.yml
+COPY cocoapy310-linux.yml $HOME/cocoapy310-linux.yml
 COPY init_cocoa10.sh $HOME/init_cocoa10.sh
 
-RUN conda env create --name cocoa --file=$HOME/cocoapy310.yml --quiet --yes \
-  && conda clean --all -f -y  \
+RUN conda create -n lock -c conda-forge python=3.10 conda-lock=2.* wget --quiet --yes \
+  && conda run --no-capture-output -n lock conda-lock install --name cocoa $HOME/cocoapy310-linux.yml \
+  && conda run --no-capture-output -n cocoa /bin/bash $HOME/init_cocoa10.sh \
   && find $CONDA_DIR -follow -type f -name '*.pyc' -delete \
   && rm -rf $CONDA_DIR/share/man/* \
   && rm -rf $CONDA_DIR/envs/cocoa/man/* \
-  && conda run --no-capture-output -n cocoa /bin/bash $HOME/init_cocoa10.sh \
   && /usr/local/bin/fix-permissions $HOME \
   && /usr/local/bin/fix-permissions $CONDA_DIR 
 
@@ -151,7 +151,6 @@ RUN conda env create --name cocoa --file=$HOME/cocoapy310.yml --quiet --yes \
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-
 RUN mkdir -p $HOME/.jupyter 
 
 RUN /usr/local/bin/fix-permissions $CONDA_DIR
@@ -162,7 +161,7 @@ RUN chown -R $NB_USER:$NB_GID $HOME
 RUN chown -R $NB_USER:$NB_GID $CONDA_DIR
 RUN chown -R $NB_USER:$NB_GID $HOME/.jupyter
  
-RUN echo 'Docker!' | passwd --stdin root
+#RUN echo 'CoCoaCosmolikeDocker!' | passwd --stdin root
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -192,7 +191,7 @@ VOLUME ["$HOME/host/"]
 # REMIND HOW TO BUILD THIS FILE
 # docker build . -f Dockerfile
 # docker image ls
-# docker tag 236e6116986c vivianmiranda/whovian-cocoa
+# docker tag 41615b0cd64b vivianmiranda/whovian-cocoa
 # docker push vivianmiranda/whovian-cocoa
 # run the container
 # install and compile cocoa
