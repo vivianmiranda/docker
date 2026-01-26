@@ -1,4 +1,4 @@
-FROM ubuntu:24.10
+FROM ubuntu:26.04
 
 # Fix DL4006
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -7,6 +7,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update \
   && apt-get install -yq --fix-missing software-properties-common apt-utils build-essential \
   && apt-get update \
+  && add-apt-repository -y universe \
   && apt-get update \
   && apt-get install -yq --fix-missing --no-install-recommends \
     git autoconf dpkg git-lfs xz-utils pkg-config libgflags-dev \
@@ -14,7 +15,8 @@ RUN apt-get update \
     sqlite3 libv4l-dev fonts-liberation tzdata unzip grep libsnappy-dev \
     sed libsqlite3-dev sudo locales fonts-dejavu libgoogle-glog-dev  \
     libx264-dev libtool automake zlib1g-dev libcurl4-gnutls-dev g++ gfortran \
-    emacs sed vim man-db manpages-posix cmake cm-super ghostscript dvipng \
+    emacs sed vim man-db manpages-posix cmake cm-super ghostscript dvipng curl zip unzip tar \
+
 # ------------------------------------------------------------------------
   && ln -s /bin/tar /bin/gtar \
   && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
@@ -170,7 +172,7 @@ RUN wget https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz \
 # FMT formmating library C++20 (https://github.com/fmtlib/fmt)
 RUN git clone https://github.com/fmtlib/fmt.git \ 
   && cd ./fmt \
-  && git checkout 11.0.2 \
+  && git checkout 12.1.0 \
   && mkdir  build \
   && cd build \
   && cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. \
@@ -179,14 +181,15 @@ RUN git clone https://github.com/fmtlib/fmt.git \
   && cd ../../ \
   && rm -rf ./fmt
 
+##&& git checkout 11.0.2 \
+
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-RUN git clone https://github.com/vivianmiranda/spdlog.git \
+RUN git clone https://github.com/gabime/spdlog.git \
   && cd spdlog \
-  && cd ../ \
-  && cd spdlog \
+  && git checkout v1.17.0 \
   && mkdir  build \
   && cd build \
   && cmake \ 
@@ -203,6 +206,7 @@ RUN git clone https://github.com/vivianmiranda/spdlog.git \
 # --------------------------------------------------------------------------
 RUN git clone https://github.com/kokkos/mdspan \
     && cd ./mdspan \
+    && git checkout 5d4eb209c77f4744980c0b0c2af44636cc81b08b \
     && mkdir  build \
     && cd build  \
     && cmake \
@@ -223,20 +227,17 @@ RUN cp /mdspan/include/experimental/mdarray /usr/local/include/ \
     && rm -rf /mdspan/
 
 # ------------------------------------------------------------------
-# DOWNLOAD EXPERIMENTAL GCC SNAPSHOT (GCC15)
-RUN wget --content-disposition https://kayari.org/gcc-latest/gcc-latest.deb \
-    && apt install ./gcc-latest_15.0.1-20250406gitb39d5fad621c.deb \ 
-    &&  rm -rf gcc-latest_15.0.1-20250406gitb39d5fad621c.deb
-
+# DOWNLOAD EXPERIMENTAL GCC SNAPSHOT (GCC16)
+#RUN wget --content-disposition https://kayari.org/gcc-latest/gcc-latest.deb \
+#   && apt install ./gcc-latest_16.0.0-20260111git8e4107a1b3d4.deb \ 
+#    &&  rm -rf gcc-latest_16.0.0-20260111git8e4107a1b3d4.deb
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
 ENV VCPKG_DIR /usr/local/
-
-RUN apt-get install -yq --fix-missing --no-install-recommends unzip
-
 RUN git clone https://github.com/Microsoft/vcpkg.git \
     && cd vcpkg \
+    && git checkout 2026.01.16 \
     && ./bootstrap-vcpkg.sh \
     && ./vcpkg integrate install \
     && ./vcpkg install range-v3 \
@@ -260,6 +261,7 @@ RUN git clone https://github.com/catchorg/Catch2 \
 
 RUN git clone https://github.com/contour-terminal/libunicode/ \
     && cd libunicode \
+    && git checkout v0.7.0 \
     && cmake -B build -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build \
     && cmake --install build \
