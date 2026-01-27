@@ -24,10 +24,7 @@ cat<<TF
 **********************************************************************
 *                                                                    *
 * Welcome to Docker Whovian-PHY504 docker image. I hope this VM      *
-* will help you learn shell, C and C++                               *
-*                                                                    *
-* This image also contains multiple gcc compilers (gcc 13 / 14)      *
-* They contain new features about Fortran 2008 / C++23. Have fun!    *
+* will help you learn shell, C and C++. Have fun!                    *
 *                                                                    *
 **********************************************************************
 

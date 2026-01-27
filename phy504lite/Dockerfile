@@ -6,17 +6,15 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update \
   && apt-get install -yq --fix-missing software-properties-common apt-utils build-essential \
-  && apt-get update \
   && add-apt-repository -y universe \
   && apt-get update \
   && apt-get install -yq --fix-missing --no-install-recommends \
-    git autoconf dpkg git-lfs xz-utils pkg-config libgflags-dev \
-    libhdf5-dev libarpack2-dev nano make wget curl libleveldb-dev \
-    sqlite3 libv4l-dev fonts-liberation tzdata unzip grep libsnappy-dev \
-    sed libsqlite3-dev sudo locales fonts-dejavu libgoogle-glog-dev  \
-    libx264-dev libtool automake zlib1g-dev libcurl4-gnutls-dev g++ gfortran \
-    emacs sed vim man-db manpages-posix cmake cm-super ghostscript dvipng curl zip unzip tar \
-
+    git autoconf dpkg git-lfs xz-utils pkg-config libgflags-dev python3  \
+    libhdf5-dev libarpack2-dev nano make wget curl libleveldb-dev python3.13-dev \
+    sqlite3 libv4l-dev fonts-liberation tzdata unzip grep libsnappy-dev python3-pip \
+    sed libsqlite3-dev sudo locales fonts-dejavu libgoogle-glog-dev manpages less  \
+    libx264-dev libtool automake zlib1g-dev libcurl4-gnutls-dev g++ gfortran manpages-dev \
+    emacs vim man-db manpages-posix unminimize cmake cm-super ghostscript dvipng zip tar libtbb-dev \
 # ------------------------------------------------------------------------
   && ln -s /bin/tar /bin/gtar \
   && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
@@ -37,10 +35,15 @@ RUN apt-get update \
   && mv /etc/ssh/ssh_config.new /etc/ssh/ssh_config \
 # --------------------------------------------------------------------------
   && apt-get clean \
-  && apt-get autoremove --yes \
-  && rm -rf /var/lib/apt/lists/* \
-  && rm -rf /usr/share/doc/ \
-  && rm -rf /usr/share/man/
+  && apt-get autoremove --yes
+
+RUN set +o pipefail \
+    && yes | unminimize \
+    && set -o pipefail \
+    && mandb -q \
+    && apt-get clean \
+    && apt-get autoremove --yes \
+    && rm -rf /var/lib/apt/lists/*
 
 ARG NB_USER="whovian"
 ARG NB_UID=1005
@@ -170,9 +173,8 @@ RUN wget https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz \
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # FMT formmating library C++20 (https://github.com/fmtlib/fmt)
-RUN git clone https://github.com/fmtlib/fmt.git \ 
+RUN git clone --depth 1 --branch 12.1.0 https://github.com/fmtlib/fmt.git \ 
   && cd ./fmt \
-  && git checkout 12.1.0 \
   && mkdir  build \
   && cd build \
   && cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. \
@@ -187,9 +189,8 @@ RUN git clone https://github.com/fmtlib/fmt.git \
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-RUN git clone https://github.com/gabime/spdlog.git \
+RUN git clone --depth 1 --branch v1.17.0 https://github.com/gabime/spdlog.git \
   && cd spdlog \
-  && git checkout v1.17.0 \
   && mkdir  build \
   && cd build \
   && cmake \ 
@@ -240,7 +241,8 @@ RUN git clone https://github.com/Microsoft/vcpkg.git \
     && git checkout 2026.01.16 \
     && ./bootstrap-vcpkg.sh \
     && ./vcpkg integrate install \
-    && ./vcpkg install range-v3 \
+    && ./vcpkg install range-v3 --clean-after-build \
+    && rm -rf buildtrees packages downloads \
     && cd ../
   
 RUN rm -rf /var/lib/apt/lists/*
@@ -249,7 +251,7 @@ RUN rm -rf /var/lib/apt/lists/*
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 
-RUN git clone https://github.com/catchorg/Catch2 \
+RUN git clone --depth 1 --branch v3.12.0 https://github.com/catchorg/Catch2 \
   && cd Catch2 \ 
   && mkdir build \
   && cd build \
@@ -259,14 +261,24 @@ RUN git clone https://github.com/catchorg/Catch2 \
   && cd ../../ \
   && rm -rf Catch2
 
-RUN git clone https://github.com/contour-terminal/libunicode/ \
+RUN git clone --depth 1 --branch v0.7.0 https://github.com/contour-terminal/libunicode/ \
     && cd libunicode \
-    && git checkout v0.7.0 \
     && cmake -B build -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build \
     && cmake --install build \
     && cd .. \
     && rm -rf libunicode
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+RUN git clone --depth 1 --branch v3.0.1 https://github.com/pybind/pybind11.git \
+    && cd pybind11 \
+    && cmake -B build -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build build \
+    && cmake --install build \
+    && cd .. \
+    && rm -rf pybind11
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -297,14 +309,6 @@ RUN chmod +x /usr/bin/tini \
   && mkdir -p $HOME/host/ && chmod -R a+rwx $HOME/host/ \
   && rm -rf ~/.cache/pip
 
-RUN apt-get update \
-  && apt-get install -yq --fix-missing libtbb-dev \
-  && apt-get clean \
-  && apt-get autoremove --yes \
-  && rm -rf /var/lib/apt/lists/* \
-  && rm -rf /usr/share/doc/ \
-  && rm -rf /usr/share/man/
-
 EXPOSE 8888
 
 ENTRYPOINT ["tini", "-g", "--"]
@@ -320,4 +324,4 @@ VOLUME ["$HOME/host/"]
 # docker tag 143f15f6f0e6 vivianmiranda/whovian-phy504lite
 # docker push vivianmiranda/whovian-phy504lite
 # How to run?
-# docker run --platform linux/amd64 --hostname whovianphy504 --name phy504_2025_v2 -it -p 8888:8888 -v $(pwd):/home/whovian/host/ -v ~/.ssh:/home/whovian/.ssh:ro vivianmiranda/whovian-phy504lite
+# docker run --platform linux/amd64 --hostname whovianphy504 --name phy504_2026 -it -p 8888:8888 -v "$(pwd)":/home/whovian/host/ -v ~/.ssh:/home/whovian/.ssh:ro vivianmiranda/whovian-phy504lite
