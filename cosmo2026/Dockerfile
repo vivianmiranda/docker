@@ -1,4 +1,4 @@
-FROM ubuntu:26.04
+FROM nvidia/cuda:13.0.1-cudnn-devel-ubuntu24.04
 
 # Fix DL4006
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -7,10 +7,11 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update \
   && apt-get install -yq --fix-missing software-properties-common apt-utils build-essential \
   && add-apt-repository -y universe \
+  && add-apt-repository -y multiverse \
   && apt-get update \
-  && apt-get install -yq --fix-missing --no-install-recommends libstdc++-15-dev \
-    git autoconf dpkg git-lfs xz-utils pkg-config libgflags-dev python3 python3-dev  \
-    libhdf5-dev libarpack2-dev nano make wget curl libleveldb-dev \
+  && apt-get install -yq --fix-missing --no-install-recommends libstdc++-14-dev \
+    git autoconf dpkg git-lfs xz-utils pkg-config libgflags-dev python3  \
+    libhdf5-dev libarpack2-dev nano make wget curl libleveldb-dev python3-dev \
     sqlite3 libv4l-dev fonts-liberation tzdata unzip grep libsnappy-dev python3-pip \
     sed libsqlite3-dev sudo locales fonts-dejavu libgoogle-glog-dev manpages less  \
     libx264-dev libtool automake zlib1g-dev libcurl4-gnutls-dev g++ gfortran manpages-dev \
@@ -48,7 +49,6 @@ RUN set +o pipefail \
 ARG NB_USER="whovian"
 ARG NB_UID=1005
 ARG NB_GID=1005
-
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -63,7 +63,6 @@ ENV SHELL=/bin/bash \
     HOME=/home/$NB_USER \
     MAKE_NUM_THREADS=4 \
     GOSU_VERSION=1.16
-
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -77,11 +76,15 @@ RUN chmod a+rx /usr/local/bin/fix-permissions \
 # Enable prompt color in the skeleton .bashrc before creating the NB_USER
   && sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc
 # --------------------------------------------------------------------------
-RUN curl -OL "https://github.com/google/protobuf/releases/download/v3.0.0/protoc-3.0.0-linux-x86_64.zip" \
-  && unzip protoc-3.0.0-linux-x86_64.zip -d proto3 \
-  && mv proto3/bin/* /usr/local/bin \
-  && mv proto3/include/* /usr/local/include \
-  && rm -rf proto3 protoc-3.0.0-linux-x86_64.zip 
+# protoc (Protocol Buffers compiler)
+ENV PROTOC_VERSION=34.1
+RUN curl -sSL -o protoc.zip \
+    "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip" \
+  && unzip -q protoc.zip -d /tmp/proto \
+  && mv /tmp/proto/bin/* /usr/local/bin/ \
+  && mv /tmp/proto/include/* /usr/local/include/ \
+  && chmod 755 /usr/local/bin/protoc \
+  && rm -rf /tmp/proto protoc.zip
 # --------------------------------------------------------------------------
 # INSTALL GOSU
 RUN dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')" \
@@ -128,6 +131,49 @@ RUN wget --no-check-certificate https://download.open-mpi.org/release/open-mpi/v
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
+RUN git clone --depth 1 --branch v0.3.33 https://github.com/xianyi/OpenBLAS.git \
+  && cd OpenBLAS \
+  && make -j $MAKE_NUM_THREADS USE_OPENMP=1 all \
+  && make install PREFIX=/usr/local \
+  && cd ../ \
+  && rm -rf OpenBLAS/ 
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+RUN wget -q http://www.fftw.org/fftw-3.3.11.tar.gz \
+  && tar zxvf fftw-3.3.11.tar.gz \
+  && rm -f fftw-3.3.11.tar.gz \
+  && cd fftw-3.3.11/ \
+  && ./configure --enable-openmp --enable-shared=yes --enable-static=yes \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../ \
+  && rm -rf fftw-3.3.11/ 
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+RUN wget -q -O armadillo-15.2.7.tar.xz 'https://sourceforge.net/projects/arma/files/armadillo-15.2.7.tar.xz/download' \
+  && tar xvf armadillo-15.2.7.tar.xz \
+  && rm -f armadillo-15.2.7.tar.xz \
+  && cd armadillo-15.2.7/ \
+  && cmake -DBUILD_SHARED_LIBS=TRUE --log-level=ERROR . \
+  && make -j $MAKE_NUM_THREADS \
+  && make install \
+  && cd ../ \
+  && rm -rf armadillo-15.2.7/ 
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+RUN git clone --branch v0.6.1 https://github.com/RUrlus/carma.git \
+  && cp -r carma/include/carma /usr/local/include/ \
+  && rm -rf carma
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 RUN wget -q http://ftp.wayne.edu/gnu/gsl/gsl-2.8.tar.gz \
   && tar zxvf gsl-2.8.tar.gz \
   && rm -f gsl-2.8.tar.gz \
@@ -137,20 +183,17 @@ RUN wget -q http://ftp.wayne.edu/gnu/gsl/gsl-2.8.tar.gz \
   && make install \
   && cd ../ \
   && rm -rf gsl-2.8/
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# DOWNLOAD EXPERIMENTAL GCC SNAPSHOT (GCC16)
 
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-RUN wget -q https://sourceforge.net/projects/arma/files/armadillo-14.2.2.tar.xz \
-  && tar xvf armadillo-14.2.2.tar.xz\
-  && rm -f armadillo-14.2.2.tar.xz \
-  && cd armadillo-14.2.2/ \
-  && cmake -DBUILD_SHARED_LIBS=TRUE --log-level=ERROR . \
-  && make -j $MAKE_NUM_THREADS \
-  && make install \
-  && cd ../ \
-  && rm -rf armadillo-14.2.2/
+RUN apt-get update \
+  && wget --content-disposition https://kayari.org/gcc-latest/gcc-latest.deb \
+  && apt install -y ./gcc-latest*.deb \ 
+  && rm -f gcc-latest*.deb \
+  && rm -rf /var/lib/apt/lists/*
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -160,20 +203,18 @@ RUN wget https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz \
   && tar zxvf boost_1_87_0.tar.gz \
   && rm boost_1_87_0.tar.gz \
   && cd boost_1_87_0 \
-  && ./bootstrap.sh \
-  && ./b2  --with-regex install \
+  && ./bootstrap.sh --with-libraries=regex \
+  && ./b2 link=shared --with-regex -j$MAKE_NUM_THREADS install \
   && cd ../ \
   && rm -rf boost_1_87_0 \
-#--------------------------------------------------------------------
   && ldconfig
-#--------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # FMT formmating library C++20 (https://github.com/fmtlib/fmt)
-RUN git clone --depth 1 --branch 12.1.0 https://github.com/fmtlib/fmt.git \ 
+RUN git clone --branch 12.1.0 https://github.com/fmtlib/fmt.git \ 
   && cd ./fmt \
   && mkdir  build \
   && cd build \
@@ -182,12 +223,11 @@ RUN git clone --depth 1 --branch 12.1.0 https://github.com/fmtlib/fmt.git \
   && make install \
   && cd ../../ \
   && rm -rf ./fmt
-
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-RUN git clone --depth 1 --branch v1.17.0 https://github.com/gabime/spdlog.git \
+RUN git clone --branch v1.17.0 https://github.com/gabime/spdlog.git \
   && cd spdlog \
   && mkdir  build \
   && cd build \
@@ -199,13 +239,6 @@ RUN git clone --depth 1 --branch v1.17.0 https://github.com/gabime/spdlog.git \
   && cd ../../ \
   && rm -rf ./spdlog
 
-# ------------------------------------------------------------------
-# DOWNLOAD EXPERIMENTAL GCC SNAPSHOT (GCC16)
-
-RUN wget --content-disposition https://kayari.org/gcc-latest/gcc-latest.deb \
-  && apt install ./gcc-latest*.deb \ 
-  && rm -rf gcc-latest*.deb \
-  && rm -rf /var/lib/apt/lists/*
 
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
@@ -218,13 +251,15 @@ RUN git clone https://github.com/Microsoft/vcpkg.git \
     && ./vcpkg integrate install \
     && ./vcpkg install range-v3 --clean-after-build \
     && rm -rf buildtrees packages downloads \
-    && cd ../
-
+    && cd ../ \
+    && rm -rf /usr/local/vcpkg/.git \
+              /usr/local/vcpkg/downloads \
+              /usr/local/vcpkg/buildtrees \
+              /usr/local/vcpkg/packages 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-
-RUN git clone --depth 1 --branch v3.12.0 https://github.com/catchorg/Catch2 \
+RUN git clone --branch v3.12.0 https://github.com/catchorg/Catch2 \
   && cd Catch2 \ 
   && mkdir build \
   && cd build \
@@ -234,31 +269,76 @@ RUN git clone --depth 1 --branch v3.12.0 https://github.com/catchorg/Catch2 \
   && cd ../../ \
   && rm -rf Catch2
 
-RUN git clone --depth 1 --branch v0.7.0 https://github.com/contour-terminal/libunicode/ \
+RUN git clone --branch v0.7.0 https://github.com/contour-terminal/libunicode/ \
     && cd libunicode \
     && cmake -B build -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build \
     && cmake --install build \
     && cd .. \
     && rm -rf libunicode
-
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-
-RUN git clone --depth 1 --branch v3.0.1 https://github.com/pybind/pybind11.git \
+RUN git clone --branch v3.0.4 https://github.com/pybind/pybind11.git \
     && cd pybind11 \
     && cmake -B build -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build \
     && cmake --install build \
     && cd .. \
     && rm -rf pybind11
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+       python3-venv \
+       python3-pip \
+  && rm -rf /var/lib/apt/lists/*
 
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
+RUN pip install \
+    'numpy' \
+    'tensorflow==2.21.0' \
+    'tensorflow_probability==0.25.0' \
+    'keras==3.12.1' \
+    'keras-preprocessing==1.1.2' \
+    'torch==2.11.0' \
+    'torchvision==0.26.0' \
+    'torchaudio==2.11.0' \
+    'scikit-learn==1.7.2' \
+    'jupyter>=1.1' \
+    'typing-extensions==4.13.2' \
+    'mkdocs_material==9.6.13' \
+    'mkdocstrings==0.29.1' \
+    'pytest==8.3.5' \
+    'tf-keras==2.21.0' \
+    'jax==0.4.30' \
+    'jaxlib==0.4.30' \
+    'astropy' \
+    'getdist==1.7.7' \
+    'matplotlib==3.10.9' \
+    'numba' \
+    'iminuit' \
+    'scipy' \
+    'pandas' \
+    'sympy' \
+    'multiprocess' \
+    'virtualenv' \
+    'imageio' \
+    --no-cache-dir \
+    --prefer-binary \
+    --extra-index-url "https://download.pytorch.org/whl/cu130" \
+    -f https://storage.googleapis.com/jax-releases/jax_releases.html 
+
+# Critical: let whovian modify the venv later
+RUN chown -R $NB_UID:$NB_GID /opt/venv \
+  && chmod -R u+rwX,g+rwX /opt/venv
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 RUN mkdir -p $HOME/.jupyter 
 
 RUN /usr/local/bin/fix-permissions $HOME 
@@ -295,7 +375,7 @@ VOLUME ["$HOME/host/"]
 # REMIND HOW TO BUILD THIS FILE
 # docker build . -f Dockerfile
 # docker image ls
-# docker tag 143f15f6f0e6 vivianmiranda/whovian-phy504lite
-# docker push vivianmiranda/whovian-phy504lite
+# docker tag 143f15f6f0e6 vivianmiranda/whovian-cosmo2026
+# docker push vivianmiranda/whovian-cosmo2026
 # How to run?
-# docker run --platform linux/amd64 --hostname whovianphy504 --name phy504_2026 -it -p 8888:8888 -v "$(pwd)":/home/whovian/host/ -v ~/.ssh:/home/whovian/.ssh:ro vivianmiranda/whovian-phy504lite
+# docker run --platform linux/amd64 --hostname cosmo2026 --name cosmo2026 -it -p 8888:8888 -v "$(pwd)":/home/whovian/host/ -v ~/.ssh:/home/whovian/.ssh:ro vivianmiranda/whovian-cosmo2026
