@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
 
 # Fix DL4006
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -10,12 +10,13 @@ RUN apt-get update \
   && add-apt-repository -y multiverse \
   && apt-get update \
   && apt-get install -yq --fix-missing --no-install-recommends \
-    git autoconf dpkg git-lfs xz-utils pkg-config libgflags-dev python3  \
-    libhdf5-dev nano make wget curl libleveldb-dev python3-dev \
-    sqlite3 fonts-liberation tzdata unzip grep libsnappy-dev python3-pip \
-    sed libsqlite3-dev sudo locales fonts-dejavu libgoogle-glog-dev less  \
-    libtool automake zlib1g-dev libcurl4-gnutls-dev \
+    git dpkg git-lfs xz-utils pkg-config python3  \
+    nano make wget curl python3-dev python3-venv \
+    sqlite3 fonts-liberation tzdata unzip grep python3-pip \
+    sed sudo locales fonts-dejavu less  \
+    zlib1g-dev \
     vim man-db cmake cm-super ghostscript dvipng zip tar \
+    fontconfig fonts-dejavu-core fonts-liberation \   
 # ------------------------------------------------------------------------
   && ln -s /bin/tar /bin/gtar \
   && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
@@ -35,13 +36,15 @@ RUN apt-get update \
   && echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config.new \
   && mv /etc/ssh/ssh_config.new /etc/ssh/ssh_config \
 # --------------------------------------------------------------------------
+  && python3 -m venv /opt/venv \
+# --------------------------------------------------------------------------
   && apt-get clean \
   && apt-get autoremove --yes \
   && rm -rf /var/lib/apt/lists/*
 
 ARG NB_USER="whovian"
-ARG NB_UID=1005
-ARG NB_GID=1005
+ARG NB_UID=1000
+ARG NB_GID=1000
 # --------------------------------------------------------------------------
 # GLOBAL ENV VARIABLES
 ENV SHELL=/bin/bash \
@@ -53,8 +56,8 @@ ENV SHELL=/bin/bash \
     LANGUAGE=en_US.UTF-8 \
     HOME=/home/$NB_USER \
     MAKE_NUM_THREADS=4 \
-    GOSU_VERSION=1.16 \
-    CONDA_DIR=/opt/conda
+    GOSU_VERSION=1.16 
+ENV PATH="/opt/venv/bin:$PATH"
 # --------------------------------------------------------------------------
 # Copy a script that we will use to correct permissions
 COPY fix-permissions /usr/local/bin/fix-permissions
@@ -67,10 +70,12 @@ RUN chmod a+rx /usr/local/bin/fix-permissions \
 ENV PROTOC_VERSION=34.1
 RUN curl -sSL -o protoc.zip \
     "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip" \
+  && mkdir -p /usr/local/include \
   && unzip -q protoc.zip -d /tmp/proto \
   && mv /tmp/proto/bin/* /usr/local/bin/ \
   && mv /tmp/proto/include/* /usr/local/include/ \
   && chmod 755 /usr/local/bin/protoc \
+  && chmod -R a+r /usr/local/include/google \
   && rm -rf /tmp/proto protoc.zip
 # --------------------------------------------------------------------------
 # INSTALL GOSU
@@ -90,18 +95,8 @@ RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su \
     && sed -i.bak -e 's/^%admin/#%admin/' /etc/sudoers \
     && sed -i.bak -e 's/^%sudo/#%sudo/' /etc/sudoers \
     && useradd -m -s /bin/bash -N -u $NB_UID $NB_USER \
-    && groupmod -g 1005 users \
-    && chmod g+w /etc/passwd 
+    && chmod g+w /etc/passwd
 # --------------------------------------------------------------------------
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-       python3-venv \
-       python3-pip \
-  && rm -rf /var/lib/apt/lists/*
-
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
 RUN pip install \
     'numpy' \
     'tensorflow==2.18.0' \
@@ -137,11 +132,14 @@ RUN chown -R $NB_UID:$NB_GID /opt/venv \
 USER root
 
 # 1) System fonts + fontconfig
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      fontconfig \
-      fonts-dejavu-core \
-      fonts-liberation \
-    && rm -rf /var/lib/apt/lists/*
+# done in the beginning 
+#RUN apt-get update && apt-get install -y --no-install-recommends \
+#      fontconfig \
+#      fonts-dejavu-core \
+#      fonts-liberation \
+#    && apt-get clean \
+#    && apt-get autoremove --yes \
+#    && rm -rf /var/lib/apt/lists/*
 RUN fc-cache -fv
 
 # 2) matplotlib cache outside /home so bind-mounted homes can't shadow it
@@ -165,7 +163,6 @@ RUN mkdir -p $HOME/.jupyter
 
 RUN /usr/local/bin/fix-permissions $HOME 
 RUN /usr/local/bin/fix-permissions $HOME/.jupyter
-
 RUN chown -R $NB_USER:$NB_GID $HOME
 RUN chown -R $NB_USER:$NB_GID $HOME/.jupyter 
 # --------------------------------------------------------------------------
@@ -192,9 +189,10 @@ VOLUME ["$HOME/host/"]
 # REMIND HOW TO BUILD THIS FILE
 # docker build . -f Dockerfile
 # docker image ls
-# docker tag 6ce9968b6d0a vivianmiranda/whovian-pytorch-amypond
+# docker tag edfe3d9a1d3d vivianmiranda/whovian-pytorch-amypond
 # docker push vivianmiranda/whovian-pytorch-amypond
 # How to run?
 # docker run --gpus all --platform linux/amd64 --hostname pytorch \
 #  --name pytorch -it -p 8888:8888 -v "$(pwd)":/home/whovian/host/ \
 #   -v ~/.ssh:/home/whovian/.ssh:ro vivianmiranda/whovian-pytorch-amypond
+# docker prune 
