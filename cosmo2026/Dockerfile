@@ -300,7 +300,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 RUN pip install \
     'numpy' \
-    'tensorflow==2.21.0' \
+    'tensorflow[and-cuda]==2.21.0' \
     'tensorflow_probability==0.25.0' \
     'keras==3.12.1' \
     'keras-preprocessing==1.1.2' \
@@ -314,7 +314,7 @@ RUN pip install \
     'mkdocstrings==0.29.1' \
     'pytest==8.3.5' \
     'tf-keras==2.21.0' \
-    'jax==0.4.30' \
+    'jax[cuda12]==0.4.30' \
     'jaxlib==0.4.30' \
     'astropy' \
     'getdist==1.7.7' \
@@ -329,12 +329,46 @@ RUN pip install \
     'imageio' \
     --no-cache-dir \
     --prefer-binary \
-    --extra-index-url "https://download.pytorch.org/whl/cu130" \
-    -f https://storage.googleapis.com/jax-releases/jax_releases.html 
+    --extra-index-url "https://download.pytorch.org/whl/cu126"
 
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 # Critical: let whovian modify the venv later
 RUN chown -R $NB_UID:$NB_GID /opt/venv \
   && chmod -R u+rwX,g+rwX /opt/venv
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------  
+USER root
+
+# 1) System fonts + fontconfig
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      fontconfig \
+      fonts-dejavu-core \
+      fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
+RUN fc-cache -fv
+
+# 2) matplotlib cache outside /home so bind-mounted homes can't shadow it
+ENV MPLCONFIGDIR=/opt/matplotlib-cache
+RUN mkdir -p $MPLCONFIGDIR \
+ && chown -R $NB_UID:$NB_GID $MPLCONFIGDIR \
+ && chmod -R a+rwX $MPLCONFIGDIR
+
+# 3) Warm the cache as the notebook user, so the first plot in a fresh
+#    container doesn't trigger a multi-minute scan or a lock hang.
+USER $NB_UID
+RUN python -c "import matplotlib; matplotlib.use('Agg'); \
+import matplotlib.pyplot as plt; \
+fig, ax = plt.subplots(); ax.plot([1,2,3]); \
+fig.savefig('/tmp/_warmup.png'); \
+print('cache dir:', matplotlib.get_cachedir())" \
+ && rm -f /tmp/_warmup.png
+
+USER root
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -346,7 +380,6 @@ RUN /usr/local/bin/fix-permissions $HOME/.jupyter
 
 RUN chown -R $NB_USER:$NB_GID $HOME
 RUN chown -R $NB_USER:$NB_GID $HOME/.jupyter 
-
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -375,7 +408,10 @@ VOLUME ["$HOME/host/"]
 # REMIND HOW TO BUILD THIS FILE
 # docker build . -f Dockerfile
 # docker image ls
-# docker tag 143f15f6f0e6 vivianmiranda/whovian-cosmo2026
+# docker tag bc308c423f34 vivianmiranda/whovian-cosmo2026
 # docker push vivianmiranda/whovian-cosmo2026
 # How to run?
-# docker run --platform linux/amd64 --hostname cosmo2026 --name cosmo2026 -it -p 8888:8888 -v "$(pwd)":/home/whovian/host/ -v ~/.ssh:/home/whovian/.ssh:ro vivianmiranda/whovian-cosmo2026
+# docker run --gpus all --platform linux/amd64 --hostname cosmo2026 \
+#  --name cosmo2026 -it -p 8888:8888 -v "$(pwd)":/home/whovian/host/ \
+#   -v ~/.ssh:/home/whovian/.ssh:ro vivianmiranda/whovian-cosmo2026
+# to prune images (now blow hd usage) docker image prune
